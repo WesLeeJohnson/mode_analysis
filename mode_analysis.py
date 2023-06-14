@@ -114,10 +114,9 @@ class ModeAnalysis:
             # mass order is irrelevant and don't assume it will be fixed
             # FUTURE: heavier (than Be) ions will be added to outer shells
 
-
-        # Not used vvv
-        #self.wmag = 0.5 * (self.wcyc - np.sqrt(self.wcyc ** 2 - 2 * self.wz ** 2))
-        self.wmag=0 # a hack for now
+        # magnetron frequnecy in the lab frame, used to check if frot confining
+        self.wmag= 1/2*(self.wcyc - np.sqrt(self.wcyc**2 - 2*self.wz**2))
+        print('wmag=',self.wmag)
 
         self.V0 = (0.5 * self.m_Be * self.wz ** 2) / self.q  # Find quadratic voltage at trap center
         #self.Cw = 0.045 * Vwall / 1000  # old trap
@@ -177,8 +176,8 @@ class ModeAnalysis:
         """
         # print('this is the local mode_analysis.')
         if self.wmag > self.wrot:
-            print("Warning: Rotation frequency", self.wrot/(2*pi),
-                  " is below magnetron frequency of", float(self.wrot/(2*pi)))
+            print("Warning: rotation frequency of %1.2f kHz is below magnetron frequency of %1.2f kHz" % (self.wrot/(2*pi*1e3), self.wmag/(2*pi*1e3)))
+            print('This will not provide confinement ')
             return 0
 
         self.generate_crystal()
