@@ -372,8 +372,15 @@ class ModeAnalysis:
         used as the jacobian by find_eq_pos to minimize the potential energy
         of a crystal configuration.
 
-        :param pos_array: crystal to find forces of.
-        :return: a vector of size 2N describing the x forces and y forces.
+        Parameters:
+        -----------
+        pos_array : array
+            The planar equilibrium position vector of the crystal.
+        
+        Returns:
+        --------
+        Force : array
+            The net force acting on each ion in the crystal.
         """
 
         x = pos_array[0:self.Nion]
@@ -399,10 +406,24 @@ class ModeAnalysis:
         Fx = -np.sum(fx, axis=1) + Ftrapx
         Fy = -np.sum(fy, axis=1) + Ftrapy
 
-        return np.array([Fx, Fy]).flatten()
+        Force = np.hstack((Fx, Fy))
+
+        return Force
 
     def hessian_penning(self, pos_array):
-        """Calculate Hessian of potential"""
+        """
+        Calculate Hessian of potential energy for a crystal defined by pos_array.
+
+        Parameters:
+        -----------
+        pos_array : array
+            The planar equilibrium position vector of the crystal.
+        
+        Returns:
+        --------
+        H : array
+            The Hessian of the potential energy of the crystal.
+        """
 
         x = pos_array[0:self.Nion]
         y = pos_array[self.Nion:]
@@ -484,8 +505,19 @@ class ModeAnalysis:
         Runs optimization code to tweak the position vector defining the crystal to a minimum potential energy
         configuration.
 
-        :param u0: The position vector which defines the crystal.
-        :return: The equilibrium position vector.
+        Parameters:
+        -----------
+        u0 : array
+            The planar equilibrium guess position vector of the crystal. The first N elements are the x positions,
+            the last N elements are the y positions.
+        method : str
+            Method to use for optimization. Either 'bfgs' or 'newton'
+        
+        Returns:
+        --------
+        u : array
+            The planar equilibrium position vector of the crystal. The first N elements are the x positions,
+            the last N elements are the y positions.
         """
         newton_tolerance = 1e-34
         bfgs_tolerance = 1e-34
@@ -509,9 +541,15 @@ class ModeAnalysis:
 
         THIS MAY NEED TO BE EDITED FOR NONHOMOGENOUS MASSES
 
-        :param pos_array: Position vector which defines the crystal
-                          to be analyzed.
-        :return: Array of eigenvalues, Array of eigenvectors
+        Parameters:
+        -----------
+        pos_array : array
+            The planar equilibrium position vector of the crystal.
+        
+        Returns:
+        --------
+        K : array
+            The axial hessian matrix of the crystal.
         """
 
         x = pos_array[0:self.Nion]
@@ -535,9 +573,19 @@ class ModeAnalysis:
 
         THIS MAY NEED TO BE EDITED FOR NONHOMOGENOUS MASSES
 
-        :param pos_array: Position vector which defines the crystal
-                          to be analyzed.
-        :return: Array of eigenvalues, Array of eigenvectors
+        Parameters:
+        -----------
+        pos_array : array
+            The planar equilibrium position vector of the crystal.
+
+        Returns:
+        --------
+        Eval_raw : array
+            The raw eigenvalues of the crystal. Contains imaginary values and is unsorted, has 2N eigenvalues.
+        Eval : array
+            The sorted eigenvalues of the crystal. Contains only real values and has N eigenvalues.
+        Evect : array
+            The eigenvectors of the crystal. 
         """
 
         x = pos_array[0:self.Nion]
@@ -562,7 +610,6 @@ class ModeAnalysis:
         Eval_raw = Eval
         # Convert 2N imaginary eigenvalues to N real eigenfrequencies
         ind = np.argsort(np.absolute(np.imag(Eval)))
-        # print('ind=',ind)
         Eval = np.imag(Eval[ind])
         Eval = Eval[Eval >= 0]      # toss the negative eigenvalues
         Evect = Evect[:, ind]     # sort eigenvectors accordingly
@@ -574,19 +621,29 @@ class ModeAnalysis:
 
             with np.errstate(divide='ignore',invalid='ignore'):
                 Evect[:, i] = np.where(np.sqrt(norm) != 0., Evect[:, i]/np.sqrt(norm), 0)
-            #Evect[:, i] = Evect[:, i]/np.sqrt(norm)
 
         Evect = np.asarray(Evect)
         return Eval_raw, Eval, Evect
 
     def calc_planar_modes(self, pos_array):
-        """Calculate Planar Mode Eigenvalues and Eigenvectors
+        """
+        Calculate Planar Mode Eigenvalues and Eigenvectors
 
         THIS MAY NEED TO BE EDITED FOR NONHOMOGENOUS MASSES
 
-        :param pos_array: Position vector which defines the crystal
-                          to be analyzed.
-        :return: Array of eigenvalues, Array of eigenvectors
+        Parameters:
+        -----------
+        pos_array : array
+            The planar equilibrium position vector of the crystal.
+
+        Returns:
+        --------
+        Eval : array
+            The sorted eigenvalues of the crystal. Contains only real values and has 2N eigenvalues.
+        Evect : array
+            The eigenvectors of the crystal.
+        V : array
+            The hessian matrix of the potential.
         """
 
         V = -self.hessian_penning(pos_array)  # -Hessian
@@ -598,11 +655,7 @@ class ModeAnalysis:
         Minv = np.linalg.inv(Mmat)
         firstOrder = np.bmat([[Z2n, np.identity(2 * self.Nion)], [np.dot(Minv,V/2), A]])
 
-        #mp.dps = 25
-        #firstOrder = mp.matrix(firstOrder)
-        #Eval, Evect = mp.eig(firstOrder)
         Eval, Evect = np.linalg.eig(firstOrder) 
-        # currently giving too many zero modes (increase numerical precision?)
 
         # make eigenvalues real.
         ind = np.argsort(np.absolute(np.imag(Eval)))
@@ -624,19 +677,42 @@ class ModeAnalysis:
         Eval = Eval[(Eval.size - 2 * self.Nion):]
         return Eval, Evect, V
 
-    def show_crystal(self, pos_vect):
+    def show_crystal(self, pos_vect=None,ax = None,label='Ion Positions',color='blue'):
         """
         Makes a pretty plot of the crystal with a given position vector.
 
-        :param pos_vect: The crystal position vector to be seen.
+        Parameters:
+        -----------
+        pos_vect : array
+            The planar equilibrium position vector of the crystal. The first N elements are the x positions,
+            the last N elements are the y positions. The units are in meters.
+            If None, the equilibrium position vector of the crystal class is used.
+        ax : matplotlib.axes object
+            The axes to plot the crystal on. If None, a new figure is created.
+        label : str
+            The label to use for the plot legend.
+
+        Returns:
+        --------
+        ax : matplotlib.axes object
         """
-        plt.plot(pos_vect[0:self.Nion], pos_vect[self.Nion:], '.')
-        plt.xlabel('x position [um]')
-        plt.ylabel('y position [um]')
-        # plt.axes().set_aspect('equal')
-
-        plt.show()
-
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+        if pos_vect is None:
+            pos_vect = self.uE
+        x = pos_vect[:self.Nion]
+        y = pos_vect[self.Nion:]
+        x = x*1e6
+        y = y*1e6
+        ax.scatter(x,y,color=color,label=label)
+        ax.set_xlabel('x ($\mu$m)')
+        ax.set_ylabel('y ($\mu$m)')
+        ax.set_aspect('equal')
+        ax.legend()
+        ax.set_title('Ion Positions')
+        return ax
+        
     def show_crystal_modes(self, pos_vect, Evects, modes):
         """
         For a given crystal, plots the crystal with colors based on the eigenvectors.

@@ -37,16 +37,10 @@ ma_old_instance.run()
 
 fig,axs = plt.subplots(nrows=1,ncols=2,figsize=(10,5))
 ax1 = axs[0]
-x = ma_new_instance.uE[:ma_new_instance.Nion]
-y = ma_new_instance.uE[ma_new_instance.Nion:]
-ax1.scatter(x,y,color='blue',label='new')
+ma_new_instance.show_crystal(ax = ax1,label='new')
 x = ma_old_instance.uE[:ma_old_instance.Nion]
 y = ma_old_instance.uE[ma_old_instance.Nion:]
-ax1.scatter(x,y,color='red',label='old')
-ax1.set_xlabel('x ($\mu$m)')
-ax1.set_ylabel('y ($\mu$m)')
-ax1.set_title('Positions of ions')
-ax1.set_aspect('equal')
+ma_new_instance.show_crystal(pos_vect=ma_old_instance.uE,ax=ax1,label='old',color='red')
 ax2 = axs[1]
 pln_modes_freqs = ma_new_instance.planarEvalsE
 axl_modes_freqs = ma_new_instance.axialEvals
