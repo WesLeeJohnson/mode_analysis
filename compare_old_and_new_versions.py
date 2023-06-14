@@ -35,7 +35,10 @@ ma_old_instance = ma_old.ModeAnalysis(ionmass=ionmass
 ma_new_instance.run()
 ma_old_instance.run()
 
-ma_new_instance.show_axial_Evals()
+ma_new_instance.show_cyc_freqs()
+ma_new_instance.show_ExB_freqs()
+ma_new_instance.show_axial_freqs()
+plt.show()
 exit() 
 
 nrows,ncols = 4,4

@@ -783,76 +783,90 @@ class ModeAnalysis:
         else:
             return pos_vect
 
-    def show_axial_Evals(self, experimentalunits=False, flatlines=False):
+    def show_axial_freqs(self,ax = None): 
         """
-        Plots the axial eigenvalues vs mode number.
-        
+        Plots the mode frequencies of the crystal.
+
         Parameters:
         -----------
-        experimentalunits : bool
-            If True, plots the eigenvalues in units of Hz. If False, plots the eigenvalues in units of the axial
-            frequency.
-        flatlines : bool
-            If True, plots the eigenvalues as vertical lines on a flat plot. If False, plots the eigenvalues as a
-            function of mode number.
+        ax : matplotlib.axes object
+            The axes to plot the crystal on. If None, a new figure is created.        
 
         Returns:
         --------
-        True
+        ax : matplotlib.axes object 
         """
-        if self.axialEvals is []:
-            print("Warning-- no axial eigenvalues found. Cannot show axial eigenvalues")
-            return False
+        if ax is None: 
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+        
+        mode_freqs = self.axialEvalsE
+        ax.scatter(np.arange(len(mode_freqs)),mode_freqs/(2*np.pi*1e6))
+        xticks = np.arange(len(mode_freqs))
+        if len(xticks) > 20: 
+            skip = int(len(xticks)/10)
+            xticks = xticks[::skip]
+        ax.set_xticks(xticks)
+        ax.set_xlabel('Mode Number')
+        ax.set_ylabel('Frequency (MHz)')
+        ax.set_title('Axial Mode Frequencies')
+        return ax
 
-        if flatlines is True:
-            fig = plt.figure(figsize=(8, 5))
-            fig = plt.axes(frameon=True)
-            # fig= plt.axes.get_yaxis().set_visible(False)
-            fig.set_yticklabels([])
+    def show_ExB_freqs(self,ax = None):
+        """
+        Plots the ExB mode frequencies of the crystal.
 
-            if experimentalunits is False:
-                fig = plt.xlabel("Eigenfrequency (Units of $\omega_z$)")
-                fig = plt.xlim(min(self.axialEvals) * .99, max(self.axialEvals * 1.01))
+        Parameters:
+        -----------
+        ax : matplotlib.axes object
+            The axes to plot the crystal on. If None, a new figure is created.
+        
+        Returns:
+        --------
+        ax : matplotlib.axes object 
+        """
+        if ax is None: 
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+        mode_freqs = self.planarEvalsE[:self.Nion]
+        ax.scatter(np.arange(len(mode_freqs)),mode_freqs/(2*np.pi*1e3))
+        xticks = np.arange(len(mode_freqs))
+        if len(xticks) > 20:
+            skip = int(len(xticks)/10)
+            xticks = xticks[::skip]
+        ax.set_xticks(xticks)
+        ax.set_xlabel('Mode Number')
+        ax.set_ylabel('Frequency (kHz)')
+        ax.set_title('ExB Mode Frequencies')
+        return ax
+    
+    def show_cyc_freqs(self,ax = None):
+        """
+        Plots the cyclotron mode frequencies of the crystal.
 
-                for x in self.axialEvals:
-                    fig = plt.plot([x, x], [0, 1], color='black', )
-            if experimentalunits is True:
-                fig = plt.xlabel("Eigenfrequency (2 \pi* Hz)")
-                fig = plt.xlim(min(self.axialEvalsE) * .99, max(self.axialEvalsE) * 1.01)
-                for x in self.axialEvalsE:
-                    fig = plt.plot([x, x], [0, 1], color='black')
+        Parameters:
+        -----------
+        ax : matplotlib.axes object
+            The axes to plot the crystal on. If None, a new figure is created.
 
-            fig = plt.ylim([0, 1])
-            # fig= plt.axes.yaxis.set_visible(False)
-            fig = plt.title("Axial Eigenvalues for %d Ions, $f_{rot}=$%.1f kHz, and $V_{wall}$= %.1f V " %
-                            (self.Nion, self.wrot / (2 * pi * 1e3), self.delta * self.V0 / 1612))
-            plt.show()
-            return True
-
-        fig = plt.figure()
-        xvals = np.array(range(self.Nion))
-        xvals += 1
-        if experimentalunits is False:
-            fig = plt.plot(xvals, sorted(self.axialEvals), "o")
-            fig = plt.ylim((.97 * min(self.axialEvals), 1.01 * max(self.axialEvals)))
-            fig = plt.ylabel("Eigenfrequency (Units of $\omega_z$)")
-            fig = plt.plot([-1, self.Nion + 1], [1, 1], color="black", linestyle="--")
-
-        else:
-            fig = plt.plot(xvals, sorted(self.axialEvalsE), "o")
-            fig = plt.ylim(.95 * min(self.axialEvalsE), 1.05 * max(self.axialEvalsE))
-            fig = plt.ylabel("Eigenfrequency (Hz)")
-            fig = plt.plot([-1, self.Nion + 1], [max(self.axialEvalsE), max(self.axialEvalsE)], color="black",
-                           linestyle="--")
-
-        fig = plt.xlabel("Mode Number")
-
-        fig = plt.title("Axial Eigenvalues for %d Ions, $f_{rot}=$%.1f kHz, and $V_{wall}$= %.1f V " %
-                        (self.Nion, self.wrot / (2 * pi * 1e3), self.delta * self.V0 / 1612))
-        fig = plt.xlim((0, self.Nion + 1))
-        fig = plt.grid(True)
-        fig = plt.show()
-        return True
+        Returns:
+        --------
+        ax : matplotlib.axes object 
+        """
+        if ax is None: 
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+        mode_freqs = self.planarEvalsE[self.Nion:]
+        ax.scatter(np.arange(len(mode_freqs)),mode_freqs/(2*np.pi*1e6))
+        xticks = np.arange(len(mode_freqs))
+        if len(xticks) > 20:
+            skip = int(len(xticks)/10)
+            xticks = xticks[::skip]
+        ax.set_xticks(xticks)
+        ax.set_xlabel('Mode Number')
+        ax.set_ylabel('Frequency (MHz)')
+        ax.set_title('Cyclotron Mode Frequencies')
+        return ax
 
     def get_x_and_y(self, pos_vect):
         """
