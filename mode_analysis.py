@@ -37,7 +37,6 @@ class ModeAnalysis:
     #Establish fundamental physical constants as class variables
     q = 1.602176565E-19
     amu = 1.66057e-27
-    # m_Be = 9.012182 * amu
     k_e = 8.9875517873681764E9 # electrostatic constant k_e = 1 / (4.0 pi epsilon_0)
 
     def __init__(self, N=19, XR=1, Vtrap=(0.0, -1750.0, -1970.0), Ctrap=1.0, 
@@ -45,19 +44,49 @@ class ModeAnalysis:
                 quiet=True, precision_solving=True,
                 method = 'bfgs'):
         """
-        :param N:       integer, number of ions
-        :param shells:  integer, number of shells to instantiate the plasma with
-        :param Vtrap: array of 3 elements, defines the [end, middle, center] voltages on the trap electrodes.
-        :param Ctrap: float, constant coefficient on trap potentials
-        :param B: float, defines strength of axial magnetic field.
-        :param frot: float, frequency of rotation
-        :param Vwall: float, strength of wall potential in volts
-        :param mult: float, mutliplicative factor for simplifying numerical calculations
-        :param quiet: will print some things if False
-        :param precision_solving: Determines if perturbations will be made to the crystal to find
-                                    a low energy state with a number of attempts based on the
-                                    number of ions.
-                                    Disable for speed, but recommended.
+        This class solves the eigenvalue problem for a 2D ion crystal in a Penning trap.
+
+
+        Parameters:
+        -----------
+        N : int
+            Number of ions in the crystal
+        XR : float
+            Geometric factor for the rotating wall potential, Bryce Bullock found it to be 3.082
+        Vtrap : tuple of floats
+            Voltages on the trap electrodes, in volts. (Vend, Vmid, Vcenter)
+        Ctrap : float
+            Coefficient on the trap potential, see Teale's final paper
+        omega_z : float
+            Axial frequency of the trap, in Hz
+        ionmass : float
+            Mass of the ions, in amu
+        B : float
+            Magnetic field strength, in Tesla
+        frot : float
+            Rotation frequency of the trap, in kHz
+        Vwall : float
+            Voltage on the rotating wall electrode, in volts
+        quiet : bool
+            If True, will not print anything
+        precision_solving : bool
+            If True, will perturb the crystal to find a lower energy state
+        method : str
+            Method to use for optimization. Either 'bfgs' or 'newton'
+
+        Returns:
+        --------
+        None
+
+        Examples:
+        ---------
+        >>> import mode_analysis as ma
+        >>> ma_instance = ma.ModeAnalysis(N=19, XR=1, Vtrap=(0.0, -1750.0, -1970.0), Ctrap=1.0,
+        ...                               omega_z = 1.58e6, ionmass=9.012182, B=4.4588, frot=180., Vwall=1.,
+        ...                               quiet=True, precision_solving=True,
+        ...                               method = 'bfgs')
+        >>> ma_instance.run()
+        >>> print(ma_instance.axialEvalsE)
         """
         self.method = method
         self.ionmass = ionmass
