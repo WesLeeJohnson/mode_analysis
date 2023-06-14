@@ -756,26 +756,6 @@ class ModeAnalysis:
         ax.set_title('Axial Mode %d' % mode)
         return ax 
 
-    def show_low_freq_mode(self):
-        """
-        Gets the lowest frequency modes and eigenvectors,
-        then plots them, printing the lowest frequency mode.
-
-        """
-        num_modes = np.size(self.Evals)
-        low_mode_freq = self.Evals[-1]
-        low_mode_vect = self.Evects[-1]
-
-        plt.scatter(1e6 * self.u[0:self.Nion], 1e6 * self.u[self.Nion:],
-                    c=low_mode_vect, vmin=-.25, vmax=0.25, cmap='RdGy')
-        plt.axes().set_aspect('equal')
-        plt.xlabel('x position [um]', fontsize=12)
-        plt.ylabel('y position [um]', fontsize=12)
-        plt.axis([-300, 300, -300, 300])
-        print(num_modes)
-        print("Lowest frequency mode at {0:0.1f} kHz".format(float(np.real(low_mode_freq))))
-        return 0
-
     def perturb_position(self, pos_vect, strength=.1):
         """
         Slightly displaces each ion by a random proportion (determined by 'strength' parameter)
