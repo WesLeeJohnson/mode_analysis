@@ -111,6 +111,13 @@ class ModeAnalysis:
         self.wz = self.omega_z
         self.wrot = 2 * pi * frot * 1e3  # Rotation frequency in units of angular fre   quency
 
+        # if no input masses, assume all ions are beryllium
+        self.m = self.m_Be * np.ones(self.Nion)
+
+            # mass order is irrelevant and don't assume it will be fixed
+            # FUTURE: heavier (than Be) ions will be added to outer shells
+
+
         # Not used vvv
         #self.wmag = 0.5 * (self.wcyc - np.sqrt(self.wcyc ** 2 - 2 * self.wz ** 2))
         self.wmag=0 # a hack for now
