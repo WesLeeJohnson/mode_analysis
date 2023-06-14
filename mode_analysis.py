@@ -764,24 +764,41 @@ class ModeAnalysis:
         If the new configuration has a lower global potential energy, it is returned.
         If the new configuration has a higher potential energy, it is discarded and
             the previous configuration is returned.
-        :param u: The input coordinate vector of each x,y position of each ion.
-        :return: Either the previous position vector, or a new position vector.
+        
+        Parameters:
+        -----------
+        pos_vect : array
+            The planar equilibrium position vector of the crystal. The first N elements are the x positions,
+            the last N elements are the y positions. The units are in meters.
+        strength : float
+            The maximum proportion of the ion separation to displace each ion by.
+
+        Returns:
+        --------
+        pos_vect : array
         """
-        # print("U before:", self.pot_energy(u))
         unudge = self.find_eq_pos([coord * abs(np.random.normal(1, strength)) for coord in pos_vect])
         if self.pot_energy(unudge) < self.pot_energy(pos_vect):
-            # print("Nudge successful")
-            # print("U After:", self.pot_energy(unudge))
             return unudge
         else:
-            # print("Nudge failed!")
             return pos_vect
 
     def show_axial_Evals(self, experimentalunits=False, flatlines=False):
         """
         Plots the axial eigenvalues vs mode number.
-        :param experimentalunits:
-        :return:
+        
+        Parameters:
+        -----------
+        experimentalunits : bool
+            If True, plots the eigenvalues in units of Hz. If False, plots the eigenvalues in units of the axial
+            frequency.
+        flatlines : bool
+            If True, plots the eigenvalues as vertical lines on a flat plot. If False, plots the eigenvalues as a
+            function of mode number.
+
+        Returns:
+        --------
+        True
         """
         if self.axialEvals is []:
             print("Warning-- no axial eigenvalues found. Cannot show axial eigenvalues")
@@ -983,15 +1000,9 @@ class ModeAnalysis:
 ########################################################################################
 
 if __name__ == "__main__":
-    # suite = unittest.TestLoader().loadTestsFromTestCase(TestCalculationConsistency)
-    # unittest.TextTestRunner(verbosity=1).run(suite)
-
-    # NOTE: class now takes number of ions instead of shells
     # For reference the following ion number correspond the closed shells:
     # 1  2  3  4  5   6   7   8   9  10  11  12  13  14
     # 7 19 37 61 91 127 169 217 271 331 397 469 547 631...
 
-    #a = ModeAnalysis(N=19, Vwall=35, frot=45)  # oldtrap
     a = ModeAnalysis(N=37, Vwall=1, frot=180)
     a.run()
-    #D,E = a.calc_planar_modes(a.u)
