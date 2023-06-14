@@ -35,6 +35,19 @@ ma_old_instance = ma_old.ModeAnalysis(ionmass=ionmass
 ma_new_instance.run()
 ma_old_instance.run()
 
+nrows,ncols = 4,4
+fig,axs = plt.subplots(nrows=nrows,ncols=ncols,figsize=(10,10))
+mode = 18
+for row in range(nrows):
+    for col in range(ncols):
+        ax = axs[row,col]
+        ma_new_instance.show_crystal_modes(mode=mode,ax=ax)
+        mode -= 1
+plt.tight_layout()
+plt.show()
+
+
+print(ma_new_instance.axialEvects.shape)
 fig,axs = plt.subplots(nrows=1,ncols=2,figsize=(10,5))
 ax1 = axs[0]
 ma_new_instance.show_crystal(ax = ax1,label='new')
