@@ -713,26 +713,48 @@ class ModeAnalysis:
         ax.set_title('Ion Positions')
         return ax
         
-    def show_crystal_modes(self, pos_vect, Evects, modes):
+    def show_crystal_modes(self, pos_vect=None, Evects=None, mode = 0, ax=None,label=None):
         """
-        For a given crystal, plots the crystal with colors based on the eigenvectors.
+        Plots the axial modes of the crystal, using a color map to show displacement.
 
-        :param pos_vect: the position vector of the current crystal
-        :param Evects: the eigenvectors to be shown
-        :param modes: the number of modes you wish to see
+        Parameters:
+        -----------
+        pos_vect : array
+            The planar equilibrium position vector of the crystal. The first N elements are the x positions,
+            the last N elements are the y positions. The units are in meters.
+            If None, the equilibrium position vector of the crystal class is used.
+        Evects : array
+            The eigenvectors of the crystal. If None, the eigenvectors of the crystal class are used.
+        mode : int
+            The mode to plot.
+        ax : matplotlib.axes object
+            The axes to plot the crystal on. If None, a new figure is created.
+
+        Returns:
+        --------
+        ax : matplotlib.axes object 
         """
-        plt.figure(1)
-        # print(np.shape(pos_vect[0:self.Nion]))
-        # print(np.shape(Evects[:, 0]))
-        for i in range(modes):
-            plt.subplot(modes, 1, i + 1, aspect='equal')
-            plt.scatter(1e6 * pos_vect[0:self.Nion], 1e6 * pos_vect[self.Nion:],
-                        c=Evects[:self.Nion, -i-1], vmin=-.01, vmax=0.01,
-                        cmap='viridis')
-            plt.xlabel('x position [um]')
-            plt.ylabel('y position [um]')
-            #plt.axis([-200, 200, -200, 200])
-        plt.tight_layout()
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+        if pos_vect is None:
+            pos_vect = self.uE
+        if Evects is None:
+            Evect = self.axialEvects[:, 2*mode]
+        x = pos_vect[:self.Nion]
+        y = pos_vect[self.Nion:]
+        x = x*1e6
+        y = y*1e6
+        z = np.real(Evect)[:self.Nion]
+        clim = np.max(np.abs(Evect))
+        print(np.shape(self.axialEvects));print(self.axialEvects)
+        cmap = plt.get_cmap('seismic')
+        ax.scatter(x,y,c=z,cmap=cmap,vmin=-clim,vmax=clim)
+        ax.set_xlabel('x ($\mu$m)')
+        ax.set_ylabel('y ($\mu$m)')
+        ax.set_aspect('equal')
+        ax.set_title('Axial Mode %d' % mode)
+        return ax 
 
     def show_low_freq_mode(self):
         """
