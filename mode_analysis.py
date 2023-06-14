@@ -119,7 +119,6 @@ class ModeAnalysis:
         self.V0 = (0.5 * self.m_Be * self.wz ** 2) / self.q  # Find quadratic voltage at trap center
         self.XR=XR
         self.delta = self.XR*Vwall * 1612 / self.V0  # dimensionless coefficient for rotating wall strength 
-        # of rotating wall terms in potential
         self.dimensionless()  # Make system dimensionless
         self.beta = (self.wr*self.wc - self.wr ** 2) -1/2 # dimensionless coefficient for planar confinement
 
@@ -140,8 +139,16 @@ class ModeAnalysis:
         self.hasrun = False
 
     def dimensionless(self):
-        """Calculate characteristic quantities and convert to a dimensionless
-        system
+        """
+        Converts all variables to dimensionless units
+
+        Parameters:
+        -----------
+        None
+
+        Returns:
+        --------
+        None
         """
         # characteristic length
         self.l0 = ((self.k_e * self.q ** 2) / (.5 * self.m_Be * self.wz ** 2)) ** (1 / 3)
@@ -153,7 +160,17 @@ class ModeAnalysis:
         self.md = np.ones(self.Nion)#self.m / self.m_Be  # dimensionless mass
 
     def expUnits(self):
-        """Convert dimensionless outputs to experimental units"""
+        """
+        Converts all variables to experimental units
+
+        Parameters:
+        -----------
+        None
+
+        Returns:
+        --------
+        None
+        """
         self.u0E = self.l0 * self.u0  # Seed lattice
         self.uE = self.l0 * self.u  # Equilibrium positions
         self.axialEvalsE_raw = self.wz * self.axialEvals_raw
@@ -169,8 +186,15 @@ class ModeAnalysis:
 
         Sorts the eigenvalues and eigenvectors and stores them in self.Evals, self.Evects.
         Stores the radial separations as well.
+
+        Parameters:
+        -----------
+        None
+
+        Returns:
+        --------
+        None
         """
-        # print('this is the local mode_analysis.')
         if self.wmag > self.wrot:
             print("Warning: rotation frequency of %1.2f kHz is below magnetron frequency of %1.2f kHz" % (self.wrot/(2*pi*1e3), self.wmag/(2*pi*1e3)))
             print('This will not provide confinement ')
@@ -189,9 +213,17 @@ class ModeAnalysis:
 
     def generate_crystal(self):
         """
-        The run method already is a "start-to-finish" implementation of crystal generation and
-        eigenmode determination, so this simply contains the comopnents which generate a crystal.
-        :return: Returns a crystal's position vector while also saving it to the class.
+        Finds the equilibrium position of the crystal by first generating a guess lattice, then solving and perturbing
+
+        Parameters:
+        -----------
+        None
+
+        Returns:
+        --------
+        u : array
+            The planar equilibrium position vector of the crystal. The first N elements are the x positions,
+            the last N elements are the y positions.
         """
 
         # This check hasn't been working properly, and so wmag has been set to
@@ -203,7 +235,6 @@ class ModeAnalysis:
 
         #Generate a lattice in dimensionless units
         self.u0 = self.find_scaled_lattice_guess(mins=1, res=50)
-        # self.u0 = self.generate_2D_hex_lattice(2)
 
         # if masses are not all beryllium, force heavier ions to be boundary
         # ions, and lighter ions to be near center
@@ -239,17 +270,27 @@ class ModeAnalysis:
 
             if self.quiet is False:
                 pass
-                #print("Perturbing complete")
 
         self.r, self.dx, self.dy, self.rsep = self.find_radial_separation(self.u)
         self.p0 = self.pot_energy(self.u)
         return self.u
 
     def generate_lattice(self):
-        """Generate lattice for an arbitrary number of ions (self.Nion)
+        """
+        Generate lattice for an arbitrary number of ions (self.Nion)
+        The lattice is a hexagonal lattice with a number of closed shells
+        calculated from the number of ions.
 
-        :return: a flattened xy position vector defining the 2d hexagonal
-                 lattice
+        Parameters:
+        -----------
+        None
+
+        Returns:
+        --------
+        u : array
+            The planar equilibrium guess position vector of the crystal. The first N elements are the x positions,
+            the last N elements are the y positions.
+
         """
         # number of closed shells
         S = int((np.sqrt(9 - 12 * (1 - self.Nion)) - 3) / 6)
@@ -299,22 +340,22 @@ class ModeAnalysis:
             Coulomb repulsion
             qv x B forces
             Trapping potential
-            and some other things (#todo to be fully analyzed; june 10 2015)
-
-        :param pos_array: The position vector of the crystal to be analyzed.
-        :return: The scalar potential energy of the crystal configuration.
+        
+        Parameters:
+        -----------
+        pos_array : array
+            The planar equilibrium position vector of the crystal. 
+        
+        Returns:
+        --------
+        V : float
+            The potential energy of the crystal.
         """
-        # Frequency of rotation, mass and the number of ions in the array
-
-        # the x positions are the first N elements of the position array
         x = pos_array[0:self.Nion]
-        # The y positions are the last N elements of the position array
         y = pos_array[self.Nion:]
 
-        # dx flattens the array into a row vector
         dx = x.reshape((x.size, 1)) - x
         dy = y.reshape((y.size, 1)) - y
-        # rsep is the distances between
         rsep = np.sqrt(dx ** 2 + dy ** 2)
 
         with np.errstate(divide='ignore'):
