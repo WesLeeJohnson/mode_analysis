@@ -41,7 +41,7 @@ class ModeAnalysis:
     k_e = 8.9875517873681764E9 # electrostatic constant k_e = 1 / (4.0 pi epsilon_0)
 
     def __init__(self, N=19, XR=1, Vtrap=(0.0, -1750.0, -1970.0), Ctrap=1.0, 
-                omega_z = 1.58e6, ionmass=None, B=4.4588, frot=180., Vwall=1., 
+                omega_z = 1.58e6, ionmass=9.012182, B=4.4588, frot=180., Vwall=1., 
                 quiet=True, precision_solving=True,
                 method = 'bfgs'):
         """
