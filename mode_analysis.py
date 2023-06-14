@@ -5,7 +5,6 @@ import numpy as np
 import scipy.optimize as optimize
 import matplotlib.pyplot as plt
 import scipy.linalg as LA
-# print at line 396
 __author__ = 'sbt'
 
 # -*- coding: utf-8 -*-
@@ -187,7 +186,6 @@ class ModeAnalysis:
         self.axial_Mmat    = np.diag(self.md)
         self.planar_Mmat   = np.diag(np.tile(self.md,2))
         self.hasrun = True
-        print(self.axialEvalsE,self.axialEvals)
 
     def generate_crystal(self):
         """
