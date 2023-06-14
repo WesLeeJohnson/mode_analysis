@@ -116,16 +116,13 @@ class ModeAnalysis:
 
         # magnetron frequnecy in the lab frame, used to check if frot confining
         self.wmag= 1/2*(self.wcyc - np.sqrt(self.wcyc**2 - 2*self.wz**2))
-        print('wmag=',self.wmag)
 
         self.V0 = (0.5 * self.m_Be * self.wz ** 2) / self.q  # Find quadratic voltage at trap center
-        #self.Cw = 0.045 * Vwall / 1000  # old trap
         self.XR=XR
-        self.Cw = self.XR*Vwall * 1612 / self.V0  # dimensionless coefficient in front
-        self.delta = self.Cw  
+        self.delta = self.XR*Vwall * 1612 / self.V0  # dimensionless coefficient for rotating wall strength 
         # of rotating wall terms in potential
         self.dimensionless()  # Make system dimensionless
-        self.beta = (self.wr*self.wc - self.wr ** 2) -1/2 
+        self.beta = (self.wr*self.wc - self.wr ** 2) -1/2 # dimensionless coefficient for planar confinement
 
         self.axialEvals = []  # Axial eigenvalues
         self.axialEvects = []  # Axial eigenvectors
@@ -326,7 +323,7 @@ class ModeAnalysis:
             Vc = np.where(rsep != 0., 1 / rsep, 0)
 
         V = -np.sum((self.md * self.wr ** 2 + 0.5 * self.md - self.wr * self.wc) * (x ** 2 + y ** 2)) \
-            + np.sum(self.md * self.Cw * (x ** 2 - y ** 2)) + 0.5 * np.sum(Vc)
+            + np.sum(self.md * self.delta * (x ** 2 - y ** 2)) + 0.5 * np.sum(Vc)
 
         return V
 
@@ -356,9 +353,9 @@ class ModeAnalysis:
             fy = np.where(rsep != 0., np.float64((dy / rsep) * Fc), 0)
 
         Ftrapx = -2 * self.md * (self.wr ** 2 - self.wr * self.wc + 0.5 -
-                                 self.Cw) * x
+                                 self.delta) * x
         Ftrapy = -2 * self.md * (self.wr ** 2 - self.wr * self.wc + 0.5 +
-                                 self.Cw) * y
+                                 self.delta) * y
 
         Fx = -np.sum(fx, axis=1) + Ftrapx
         Fy = -np.sum(fy, axis=1) + Ftrapy
@@ -385,10 +382,10 @@ class ModeAnalysis:
         # Above, for alpha == beta
         # np.diag usa diagnoal value to form a matrix
         Hxx += np.mat(np.diag(-2 * self.md * (self.wr ** 2 - self.wr * self.wc + .5 -
-                                              self.Cw) -
+                                              self.delta) -
                               np.sum((rsep ** 2 - 3 * dxsq) * rsep5, axis=0)))
         Hyy += np.mat(np.diag(-2 * self.md * (self.wr ** 2 - self.wr * self.wc + .5 +
-                                              self.Cw) -
+                                              self.delta) -
                               np.sum((rsep ** 2 - 3 * dysq) * rsep5, axis=0)))
 
         # Mixed derivatives
@@ -694,7 +691,7 @@ class ModeAnalysis:
             fig = plt.ylim([0, 1])
             # fig= plt.axes.yaxis.set_visible(False)
             fig = plt.title("Axial Eigenvalues for %d Ions, $f_{rot}=$%.1f kHz, and $V_{wall}$= %.1f V " %
-                            (self.Nion, self.wrot / (2 * pi * 1e3), self.Cw * self.V0 / 1612))
+                            (self.Nion, self.wrot / (2 * pi * 1e3), self.delta * self.V0 / 1612))
             plt.show()
             return True
 
@@ -717,7 +714,7 @@ class ModeAnalysis:
         fig = plt.xlabel("Mode Number")
 
         fig = plt.title("Axial Eigenvalues for %d Ions, $f_{rot}=$%.1f kHz, and $V_{wall}$= %.1f V " %
-                        (self.Nion, self.wrot / (2 * pi * 1e3), self.Cw * self.V0 / 1612))
+                        (self.Nion, self.wrot / (2 * pi * 1e3), self.delta * self.V0 / 1612))
         fig = plt.xlim((0, self.Nion + 1))
         fig = plt.grid(True)
         fig = plt.show()
