@@ -176,6 +176,7 @@ class ModeAnalysis:
         self.axial_Mmat    = np.diag(self.md)
         self.planar_Mmat   = np.diag(np.tile(self.md,2))
         self.hasrun = True
+        print(self.axialEvalsE,self.axialEvals)
 
     def generate_crystal(self):
         """
@@ -520,7 +521,6 @@ class ModeAnalysis:
         Eval = np.imag(Eval[ind])
         Eval = Eval[Eval >= 0]      # toss the negative eigenvalues
         Evect = Evect[:, ind]     # sort eigenvectors accordingly
-
         # Normalize by energy of mode
         for i in range(2*self.Nion):
             pos_part = Evect[:self.Nion, i]
