@@ -35,6 +35,9 @@ ma_old_instance = ma_old.ModeAnalysis(ionmass=ionmass
 ma_new_instance.run()
 ma_old_instance.run()
 
+ma_new_instance.show_axial_Evals()
+exit() 
+
 nrows,ncols = 4,4
 fig,axs = plt.subplots(nrows=nrows,ncols=ncols,figsize=(10,10))
 mode = 18
