@@ -12,24 +12,24 @@ ionmass = 9.012182
 omega_z = 2*np.pi*1.58e6
 frot_kHz = 180 
 B = 4.4588 
-Vtrap = 1
+Vwall = 1
 N = 19
 XR = 3.082
 ma_new_instance = ma_new.ModeAnalysis(ionmass=ionmass
                                         ,omega_z=omega_z
                                         ,frot=frot_kHz
                                         ,B=B
-                                        ,Vtrap=Vtrap
                                         ,N=N
                                         ,XR=XR
+                                        ,Vwall=Vwall
                                     )
 ma_old_instance = ma_old.ModeAnalysis(ionmass=ionmass
                                         ,omega_z=omega_z
                                         ,frot=frot_kHz
                                         ,B=B
-                                        ,Vtrap=Vtrap
                                         ,N=N
                                         ,XR=XR
+                                        ,Vwall=Vwall
                                     )
 
 ma_new_instance.run()

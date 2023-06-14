@@ -39,7 +39,7 @@ class ModeAnalysis:
     amu = 1.66057e-27
     k_e = 8.9875517873681764E9 # electrostatic constant k_e = 1 / (4.0 pi epsilon_0)
 
-    def __init__(self, N=19, XR=3.082, Vtrap=(0.0, -1750.0, -1970.0),  
+    def __init__(self, N=19, XR=3.082, 
                 omega_z = 2*np.pi * 1.58e6, ionmass=9.012182, B=4.4588, frot=180., Vwall=1., 
                 quiet=True, precision_solving=True,
                 method = 'bfgs'):
@@ -56,8 +56,6 @@ class ModeAnalysis:
             Number of ions in the crystal
         XR : float
             Geometric factor for the rotating wall potential, Bryce Bullock found it to be 3.082
-        Vtrap : tuple of floats
-            Voltages on the trap electrodes, in volts. (Vend, Vmid, Vcenter)
         omega_z : float
             Axial frequency of the trap, in Hz
         ionmass : float
@@ -82,7 +80,7 @@ class ModeAnalysis:
         Examples:
         ---------
         >>> import mode_analysis as ma
-        >>> ma_instance = ma.ModeAnalysis(N=19, XR=1, Vtrap=(0.0, -1750.0, -1970.0), 
+        >>> ma_instance = ma.ModeAnalysis(N=19, XR=1, 
         ...                               omega_z = 1.58e6, ionmass=9.012182, B=4.4588, frot=180., Vwall=1.,
         ...                               quiet=True, precision_solving=True,
         ...                               method = 'bfgs')
@@ -105,7 +103,6 @@ class ModeAnalysis:
         self.B = B
         self.wcyc = self.q * B / self.m_Be  # Beryllium cyclotron frequency
 
-        self.Vtrap = np.array(Vtrap)  # [Vend, Vmid, Vcenter] for trap electrodes
         #  potentials at trap center
         self.omega_z = omega_z
         self.wz = self.omega_z
