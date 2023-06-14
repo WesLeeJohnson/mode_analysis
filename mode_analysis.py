@@ -46,6 +46,9 @@ class ModeAnalysis:
         """
         This class solves the eigenvalue problem for a 2D ion crystal in a Penning trap.
 
+        The class find the normal vectors and frequencies along with the equilibrium positions. 
+        The class assumes that the ion crystal is planar, which may not be true for all trap parameters.
+        The class separates the axial and planar modes of motion.
 
         Parameters:
         -----------
