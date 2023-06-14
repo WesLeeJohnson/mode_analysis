@@ -10,7 +10,7 @@ import numpy as np
 # parameters 
 ionmass = 9.012182
 omega_z = 2*np.pi*1.58e6
-frot_kHz = 180 
+frot_kHz = 180
 B = 4.4588 
 Vwall = 1
 N = 19
@@ -48,7 +48,6 @@ ax1.set_ylabel('y ($\mu$m)')
 ax1.set_title('Positions of ions')
 ax1.set_aspect('equal')
 ax2 = axs[1]
-print(dir(ma_new_instance))
 pln_modes_freqs = ma_new_instance.planarEvalsE
 axl_modes_freqs = ma_new_instance.axialEvals
 all_modes_freqs = np.sort(np.array([*pln_modes_freqs,*axl_modes_freqs]))
