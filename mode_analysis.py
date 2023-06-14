@@ -39,7 +39,7 @@ class ModeAnalysis:
     amu = 1.66057e-27
     k_e = 8.9875517873681764E9 # electrostatic constant k_e = 1 / (4.0 pi epsilon_0)
 
-    def __init__(self, N=19, XR=3.082, Vtrap=(0.0, -1750.0, -1970.0), Ctrap=1.0, 
+    def __init__(self, N=19, XR=3.082, Vtrap=(0.0, -1750.0, -1970.0),  
                 omega_z = 2*np.pi * 1.58e6, ionmass=9.012182, B=4.4588, frot=180., Vwall=1., 
                 quiet=True, precision_solving=True,
                 method = 'bfgs'):
@@ -58,8 +58,6 @@ class ModeAnalysis:
             Geometric factor for the rotating wall potential, Bryce Bullock found it to be 3.082
         Vtrap : tuple of floats
             Voltages on the trap electrodes, in volts. (Vend, Vmid, Vcenter)
-        Ctrap : float
-            Coefficient on the trap potential, see Teale's final paper
         omega_z : float
             Axial frequency of the trap, in Hz
         ionmass : float
@@ -84,7 +82,7 @@ class ModeAnalysis:
         Examples:
         ---------
         >>> import mode_analysis as ma
-        >>> ma_instance = ma.ModeAnalysis(N=19, XR=1, Vtrap=(0.0, -1750.0, -1970.0), Ctrap=1.0,
+        >>> ma_instance = ma.ModeAnalysis(N=19, XR=1, Vtrap=(0.0, -1750.0, -1970.0), 
         ...                               omega_z = 1.58e6, ionmass=9.012182, B=4.4588, frot=180., Vwall=1.,
         ...                               quiet=True, precision_solving=True,
         ...                               method = 'bfgs')
@@ -98,14 +96,6 @@ class ModeAnalysis:
         self.precision_solving = precision_solving
         # Initialize basic variables such as physical constants
         self.Nion = N
-        # self.shells = shells
-        # self.Nion = 1 + 6 * np.sum(range(1, shells + 1))
-
-        # if no input masses, assume all ions are beryllium
-        self.m = self.m_Be * np.ones(self.Nion)
-
-            # mass order is irrelevant and don't assume it will be fixed
-            # FUTURE: heavier (than Be) ions will be added to outer shells
 
         # for array of ion positions first half is x, last is y
         self.u0 = np.empty(2 * self.Nion)  # initial lattice
@@ -115,19 +105,8 @@ class ModeAnalysis:
         self.B = B
         self.wcyc = self.q * B / self.m_Be  # Beryllium cyclotron frequency
 
-        # axial trap coefficients; see Teale's final paper
-        self.C = Ctrap * np.array([[0.0756, 0.5157, 0.4087],
-                                   [-0.0001, -0.005, 0.005],
-                                   [1.9197e3, 3.7467e3, -5.6663e3],
-                                   [0.6738e7, -5.3148e7, 4.641e7]])
-
-        self.relec = 0.01  # rotating wall electrode distance in meters
         self.Vtrap = np.array(Vtrap)  # [Vend, Vmid, Vcenter] for trap electrodes
-        self.Coeff = np.dot(self.C, self.Vtrap)  # Determine the 0th, first, second, and fourth order
         #  potentials at trap center
-        #self.wz = 4.9951e6  # old trapping frequency
-        #self.wz = np.sqrt(2 * self.q * self.Coeff[2] / self.m_Be)  # Compute axial frequency
-        # print('axial freq=',self.wz/(2e6*np.pi),'MHz')
         self.omega_z = omega_z
         self.wz = self.omega_z
         self.wrot = 2 * pi * frot * 1e3  # Rotation frequency in units of angular fre   quency
@@ -409,11 +388,6 @@ class ModeAnalysis:
                                               self.Cw) -
                               np.sum((rsep ** 2 - 3 * dysq) * rsep5, axis=0)))
 
-        # print(self.V0)
-        # print('Cw=',self.Cw)
-        # print('wr=',self.wr)
-        # print('wc=',self.wc)
-        # print('wz=',self.wz)
         # Mixed derivatives
         Hxy = np.mat(-3 * dx * dy * rsep5)
         Hxy += np.mat(np.diag(3 * np.sum(dx * dy * rsep5, axis=0)))
