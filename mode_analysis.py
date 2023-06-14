@@ -42,7 +42,7 @@ class ModeAnalysis:
 
     def __init__(self, N=19, XR=1, Vtrap=(0.0, -1750.0, -1970.0), Ctrap=1.0, 
                 omega_z = 1.58e6, ionmass=None, B=4.4588, frot=180., Vwall=1., 
-                wall_order=2, quiet=True, precision_solving=True,
+                quiet=True, precision_solving=True,
                 method = 'bfgs'):
         """
         :param N:       integer, number of ions
@@ -52,7 +52,6 @@ class ModeAnalysis:
         :param B: float, defines strength of axial magnetic field.
         :param frot: float, frequency of rotation
         :param Vwall: float, strength of wall potential in volts
-        :param wall_order: integer, defines the order of the rotating wall potential
         :param mult: float, mutliplicative factor for simplifying numerical calculations
         :param quiet: will print some things if False
         :param precision_solving: Determines if perturbations will be made to the crystal to find
@@ -89,13 +88,6 @@ class ModeAnalysis:
                                    [-0.0001, -0.005, 0.005],
                                    [1.9197e3, 3.7467e3, -5.6663e3],
                                    [0.6738e7, -5.3148e7, 4.641e7]])
-
-        # wall order
-        if wall_order == 2:
-            self.Cw3 = 0
-        if wall_order == 3:
-            self.Cw2 = 0
-            self.Cw3 = self.q * Vwall * 3e4
 
         self.relec = 0.01  # rotating wall electrode distance in meters
         self.Vtrap = np.array(Vtrap)  # [Vend, Vmid, Vcenter] for trap electrodes
@@ -318,15 +310,6 @@ class ModeAnalysis:
         with np.errstate(divide='ignore'):
             Vc = np.where(rsep != 0., 1 / rsep, 0)
 
-        """
-        #Deprecated version below which takes into account anharmonic effects, to be used later
-
-        V = 0.5 * (-m * wr ** 2 - q * self.Coeff[2] + q * B * wr) * np.sum((x ** 2 + y ** 2)) \
-            - q * self.Coeff[3] * np.sum((x ** 2 + y ** 2) ** 2) \
-            + np.sum(self.Cw2 * (x ** 2 - y ** 2)) \
-            + np.sum(self.Cw3 * (x ** 3 - 3 * x * y ** 2)) \
-            + 0.5 * k_e * q ** 2 * np.sum(Vc)
-        """
         V = -np.sum((self.md * self.wr ** 2 + 0.5 * self.md - self.wr * self.wc) * (x ** 2 + y ** 2)) \
             + np.sum(self.md * self.Cw * (x ** 2 - y ** 2)) + 0.5 * np.sum(Vc)
 
@@ -357,16 +340,6 @@ class ModeAnalysis:
             fx = np.where(rsep != 0., np.float64((dx / rsep) * Fc), 0)
             fy = np.where(rsep != 0., np.float64((dy / rsep) * Fc), 0)
 
-        # total force on each ion
-
-        """ Deprecated version below which uses anharmonic trap potentials
-        Ftrapx = (-m * wr ** 2 - q * self.Coeff[2] + q * B * wr + 2 * self.Cw2) * x \
-            - 4 * q * self.Coeff[3] * (x ** 3 + x * y ** 2) + 3 * self.Cw3 * (x ** 2 - y ** 2)
-        Ftrapy = (-m * wr ** 2 - q * self.Coeff[2] + q * B * wr - 2 * self.Cw2) * y \
-            - 4 * q * self.Coeff[3] * (y ** 3 + y * x ** 2) - 6 * self.Cw3 * x * y
-
-        # Ftrap =  (m*w**2 + q*self.V0 - 2*q*self.Vw - q*self.B* w) * pos_array
-        """
         Ftrapx = -2 * self.md * (self.wr ** 2 - self.wr * self.wc + 0.5 -
                                  self.Cw) * x
         Ftrapy = -2 * self.md * (self.wr ** 2 - self.wr * self.wc + 0.5 +
