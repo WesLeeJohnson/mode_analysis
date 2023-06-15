@@ -328,8 +328,8 @@ class ModeAnalysis:
         """
 
         #Generate a lattice in dimensionless units
-        self.u0 = self.find_scaled_lattice_guess_3D(mins=1, res=50) #TODO 
-
+        self.u0_3D = self.find_scaled_lattice_guess_3D()
+        #self.show_crystal_3D(pos_vect=self.u0_3D) 
         self.u = self.find_eq_pos_3D(self.u0,self.method)
         # Will attempt to nudge the crystal to a slightly lower energy state via some
         # random perturbation.
@@ -455,6 +455,22 @@ class ModeAnalysis:
         return np.hstack((lattice[:,0],lattice[:,1],lattice[:,2]))
 
     def generate_shell_3D(self,R, N):
+        """
+        populates a shell of with equally spaced points on a sphere of radius R. 
+
+        Parameters:
+        -----------
+        R : float
+            The radius of the sphere.
+        
+        N : int
+            The number of points to be placed on the sphere.
+        
+        Returns:    
+        --------
+        points : array
+            The points on the sphere.
+        """
         points = []
         increment = np.pi * (3 - np.sqrt(5))  # Golden angle increment
 
@@ -513,6 +529,44 @@ class ModeAnalysis:
 
         return V
 
+    def pot_energy_3D(self, pos_array):
+        """
+        Computes the potential energy of the ion crystal,
+        taking into consideration:
+            Coulomb repulsion
+            qv x B forces
+            Trapping potential
+        
+        Parameters:
+        -----------
+        pos_array : array
+            The planar equilibrium position vector of the crystal. 
+            The first N elements are the x positions,
+            the next N elements are the y positions,
+            the last N elements are the z positions.
+        
+        Returns:
+        --------
+        V : float
+            The potential energy of the crystal.
+        """
+        x = pos_array[0:self.Nion]
+        y = pos_array[self.Nion:2*self.Nion]
+        z = pos_array[2*self.Nion:]
+
+        dx = x.reshape((x.size, 1)) - x
+        dy = y.reshape((y.size, 1)) - y
+        dz = z.reshape((z.size, 1)) - z
+        rsep = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
+
+        with np.errstate(divide='ignore'):
+            Vc = np.where(rsep != 0., 1 / rsep, 0)
+        V = np.sum(self.md * self.beta * (x ** 2 + y ** 2)) \
+            + np.sum(self.md * self.delta * (x ** 2 - y ** 2)) \
+                + 0.5 * np.sum(Vc) + np.sum(self.md * z ** 2)
+
+        return V
+         
     def force_penning(self, pos_array):
         """
         Computes the net forces acting on each ion in the crystal;
@@ -647,49 +701,21 @@ class ModeAnalysis:
         # print "find_scaled_lattice: no minimum found, returning last guess"
         return uthen
 
-    def find_scaled_lattice_guess_3D(self, mins, res):
+    def find_scaled_lattice_guess_3D(self): 
         """
-        Will generate a 2d hexagonal lattice based on the shells intialiization parameter.
-        Guesses initial minimum separation of mins and then increases spacing until a local minimum of
-        potential energy is found.
+        TODO: this function could scale the lattice to find the minimum potential energy. i
 
-        This doesn't seem to do anything. Needs a fixin' - AK
+        Parameters:
+        -----------
+        None
 
-        :param mins: the minimum separation to begin with.
-        :param res: the resizing parameter added onto the minimum spacing.
-        :return: the lattice with roughly minimized potential energy (via spacing alone).
+        Returns:
+        --------
+        u : array
+            The equilibrium position vector guess for the crystal. The first N elements are the x positions,
+            the next N are the y positions, and the last N are the z positions.
         """
-
-        # Make a 2d lattice; u represents the position
-        uthen = self.generate_lattice()
-        uthen = uthen * mins
-        # Figure out the lattice's initial potential energy
-        pthen = self.pot_energy(uthen)
-
-        # Iterate through the range of minimum spacing in steps of res/resolution
-        for scale in np.linspace(mins, 10, res):
-            # Quickly make a 2d hex lattice; perhaps with some stochastic procedure?
-            uguess = uthen * scale
-            # Figure out the potential energy of that newly generated lattice
-            # print(uguess)
-            pnow = self.pot_energy(uguess)
-
-            # And if the program got a lattice that was less favorably distributed, conclude
-            # that we had a pretty good guess and return the lattice.
-            if pnow >= pthen:
-                # print("find_scaled_lattice: Minimum found")
-                # print "initial scale guess: " + str(scale)
-                # self.scale = scale
-                # print(scale)
-                return uthen
-            # If not, then we got a better guess, so store the energy score and current arrangement
-            # and try again for as long as we have mins and resolution to iterate through.
-            uthen = uguess
-            pthen = pnow
-        # If you're this far it means we've given up
-        # self.scale = scale
-        # print "find_scaled_lattice: no minimum found, returning last guess"
-        return uthen
+        return self.generate_lattice_3D()
 
     def find_eq_pos(self, u0, method="bfgs"):
         """
@@ -724,7 +750,40 @@ class ModeAnalysis:
             print('method, '+method+', not recognized')
             exit()
         return out.x
-    
+
+    def find_eq_pos_3D(self, u0, method="bfgs"): 
+        """
+        Runs optimization code to find the equillibrium position of the crystal.
+
+        Parameters:
+        -----------
+        u0 : array
+            The planar equilibrium guess position vector of the crystal. The first N elements are the x positions,
+            the next N are the y positions, and the last N are the z positions.
+        method : str
+            Method to use for optimization. Either 'bfgs' or 'newton'
+
+        Returns:
+        --------
+        u : array
+            The planar equilibrium position vector of the crystal. The first N elements are the x positions,
+            the next N are the y positions, and the last N are the z positions.
+        """
+        newton_tolerance = 1e-34
+        bfgs_tolerance = 1e-34
+        if method == "newton":
+
+            out = optimize.minimize(self.pot_energy_3D, u0, method='Newton-CG', jac=self.force_penning_3D,
+                                    hess=self.hessian_penning_3D,
+                                    options={'xtol': newton_tolerance, 'disp': not self.quiet})
+        if method == 'bfgs':
+            out = optimize.minimize(self.pot_energy_3D, u0, method='BFGS', jac=self.force_penning_3D,
+                                    options={'gtol': bfgs_tolerance, 'disp': False})  # not self.quiet})
+        if (method != 'bfgs') & (method != 'newton'):
+            print('method, '+method+', not recognized')
+            exit()
+        return out.x
+
     def calc_axial_hessian(self, pos_array):
         """
         Calculate the axial hessian matrix for a crystal defined
@@ -903,7 +962,47 @@ class ModeAnalysis:
         ax.legend()
         ax.set_title('Ion Positions')
         return ax
+
+    def show_crystal_3D(self, pos_vect=None,ax = None,label='Ion Positions',color='blue'):
+        """
+        Makes a 3D plot of the ion crystal given the position vector.
+
+        Parameters:
+        -----------
+        pos_vect : array
+            The planar equilibrium position vector of the crystal. The first N elements are the x positions,
+            the next N are the y positions, and the last N are the z positions. The units are in meters.
+            If None, the equilibrium position vector of the crystal class is used.
+        ax : matplotlib.axes object
+            The axes to plot the crystal on. If None, a new figure is created.
+        label : str
+            The label to use for the plot legend.
+
+        Returns:
+        --------
+        ax : matplotlib.axes object
+        """
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111,projection='3d')
+        if pos_vect is None:
+            pos_vect = self.uE_3D
+        x = pos_vect[:self.Nion]
+        y = pos_vect[self.Nion:2*self.Nion]
+        z = pos_vect[2*self.Nion:]
+        ax.scatter(x,y,z,color=color,label=label)
+        limits = np.max(np.abs(pos_vect))
+        ax.set_xlim(-limits,limits)
+        ax.set_ylim(-limits,limits)
+        ax.set_zlim(-limits,limits)
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+        ax.legend()
         
+        return ax
+
+
     def show_crystal_modes(self, pos_vect=None, Evects=None, mode = 0, ax=None,label=None):
         """
         Plots the axial modes of the crystal, using a color map to show displacement.

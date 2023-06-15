@@ -18,7 +18,7 @@ wcyc = charge*B/mass
 vwall = 5 #V 
 omega_z = 2*np.pi*1.58e6 #rad/s
 frot = 180 #kHz
-N = 4 #number of ions
+N = 100 #number of ions
 ma3D_instance = ma3D.ModeAnalysis(ionmass=ionmass
                                     ,omega_z=omega_z
                                     ,frot=frot
@@ -27,7 +27,12 @@ ma3D_instance = ma3D.ModeAnalysis(ionmass=ionmass
                                     ,Vwall=vwall
                                     )
 ma3D_instance.run()
-
+print(ma3D_instance.pot_energy(ma3D_instance.u0)) 
+print(ma3D_instance.pot_energy_3D(np.concatenate((ma3D_instance.u0,np.zeros((N,)))))) 
+ma3D_instance.run_3D()
+fig,ax = plt.subplots()
+print(ma3D.instance.uE_3D )
+exit() 
 #plotting
 ma3D_instance.show_axial_freqs()
 ma3D_instance.show_cyc_freqs()
