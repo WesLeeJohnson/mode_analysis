@@ -11,4 +11,25 @@ from scipy import constants as const
 
 #crystal parameters
 ionmass = 9.012182 #Be
-charge = const.e
+charge = const.elementary_charge
+mass = ionmass*const.atomic_mass
+B = 4.4566 #T
+wcyc = charge*B/mass
+vwall = 5 #V 
+omega_z = 2*np.pi*1.58e6 #rad/s
+frot = 180 #kHz
+N = 4 #number of ions
+ma3D_instance = ma3D.ModeAnalysis(ionmass=ionmass
+                                    ,omega_z=omega_z
+                                    ,frot=frot
+                                    ,B=B
+                                    ,N=N
+                                    ,Vwall=vwall
+                                    )
+ma3D_instance.run()
+
+#plotting
+ma3D_instance.show_axial_freqs()
+ma3D_instance.show_cyc_freqs()
+ma3D_instance.show_ExB_freqs()
+plt.show()
