@@ -743,11 +743,9 @@ class ModeAnalysis:
 
         # Above, for alpha == beta
         # np.diag usa diagnoal value to form a matrix
-        Hxx += np.mat(np.diag(-2 * self.md * (self.wr ** 2 - self.wr * self.wc + .5 -
-                                              self.delta) -
+        Hxx += np.mat(np.diag(-2 * self.md * (-self.beta - self.delta) -
                               np.sum((rsep ** 2 - 3 * dxsq) * rsep5, axis=0)))
-        Hyy += np.mat(np.diag(-2 * self.md * (self.wr ** 2 - self.wr * self.wc + .5 +
-                                              self.delta) -
+        Hyy += np.mat(np.diag(-2 * self.md * (-self.beta + self.delta) -
                               np.sum((rsep ** 2 - 3 * dysq) * rsep5, axis=0)))
         
         Hzz += np.mat(np.diag(2 * self.md  -
