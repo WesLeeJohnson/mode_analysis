@@ -5,7 +5,7 @@ import numpy as np
 import scipy.optimize as optimize
 import matplotlib.pyplot as plt
 import scipy.linalg as LA
-__author__ = 'sbt'
+__author__ = 'Wes Johnson'
 
 # -*- coding: utf-8 -*-
 """
@@ -20,24 +20,22 @@ Standardized and slightly revised by Steven Torrisi.
 Be careful. Sometimes when using the exact same parameters this
 code will make different crystals with the same potential energy. That is,
 crystal are degenerate when reflecting over the axes.
+
+Wes Johnson, 2023 
+The code has been modified to work for 3D crystals.
 """
 
 class ModeAnalysis:
     """
-    Simulates a 2-dimensional ion crystal, determining an equilibrium plane configuration given
-    Penning trap parameters, and then calculates the eigenvectors and eigenmodes.
-
-    For reference the following ion number correspond the closed shells:
-    1  2  3  4  5   6   7   8   9  10  11  12  13  14
-    7 19 37 61 91 127 169 217 271 331 397 469 547 631...
-
-
+    The code solves the eigenvalue problem for a 3D ion crystal in a Penning trap.
+    The code first finds the equilibrium positions of the ions in the crystal.
+    The the code uses these posistions to find the stiffness matrix for the crystal.
+    The code then finds the eigenvalues and eigenvectors of the stiffness matrix.
     """
     #Establish fundamental physical constants as class variables
-    q = 1.602176565E-19
-    amu = 1.66057e-27
-    k_e = 8.9875517873681764E9 # electrostatic constant k_e = 1 / (4.0 pi epsilon_0)
-
+    q = cons.elementary_charge
+    amu = cons.atomic_mass
+    k_e = 1/(4*pi*cons.epsilon_0)
     def __init__(self, N=19, XR=3.082, 
                 omega_z = 2*np.pi * 1.58e6, ionmass=9.012182, B=4.4588, frot=180., Vwall=1., 
                 quiet=True, precision_solving=True,
@@ -54,7 +52,7 @@ class ModeAnalysis:
         N : int
             Number of ions in the crystal
         XR : float
-            Geometric factor for the rotating wall potential, Bryce Bullock found it to be 3.082
+            Geometric factor for the rotating wall potential, Bryce Bullock @ NIST found it to be 3.082
         omega_z : float
             Axial frequency of the trap, in Hz
         ionmass : float
