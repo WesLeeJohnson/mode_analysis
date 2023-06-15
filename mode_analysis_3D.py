@@ -611,6 +611,55 @@ class ModeAnalysis:
 
         return Force
 
+    def force_penning_3D(self, pos_array):
+        """
+        Computes the net forces acting on each ion in the crystal;
+        used as the jacobian by find_eq_pos to minimize the potential energy
+        of a crystal configuration.
+
+        Parameters:
+        -----------
+        pos_array : array
+            The planar equilibrium position vector of the crystal. The first N elements are the x positions,
+            the next N elements are the y positions,
+            the last N elements are the z positions.
+        
+        Returns:
+        --------
+        Force : array
+            The net force acting on each ion in the crystal.
+        """
+
+        x = pos_array[0:self.Nion]
+        y = pos_array[self.Nion:2*self.Nion]
+        z = pos_array[2*self.Nion:]
+
+        dx = x.reshape((x.size, 1)) - x
+        dy = y.reshape((y.size, 1)) - y
+        dz = z.reshape((z.size, 1)) - z
+        rsep = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
+
+        # Calculate coulomb force on each ion
+        with np.errstate(divide='ignore'):
+            Fc = np.where(rsep != 0., rsep ** (-2), 0)
+
+        with np.errstate(divide='ignore', invalid='ignore'):
+            fx = np.where(rsep != 0., np.float64((dx / rsep) * Fc), 0)
+            fy = np.where(rsep != 0., np.float64((dy / rsep) * Fc), 0)
+            fz = np.where(rsep != 0., np.float64((dz / rsep) * Fc), 0)
+
+        Ftrapx = -2 * self.md * ( - self.beta - self.delta) * x
+        Ftrapy = -2 * self.md * ( - self.beta + self.delta) * y
+        Ftrapz = -2 * self.md * z
+
+        Fx = -np.sum(fx, axis=1) + Ftrapx
+        Fy = -np.sum(fy, axis=1) + Ftrapy
+        Fz = -np.sum(fz, axis=1) + Ftrapz
+
+        Force = np.hstack((Fx, Fy, Fz))
+
+        return Force
+
     def hessian_penning(self, pos_array):
         """
         Calculate Hessian of potential energy for a crystal defined by pos_array.
