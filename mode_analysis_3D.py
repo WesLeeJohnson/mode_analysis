@@ -706,6 +706,65 @@ class ModeAnalysis:
         H = np.asarray(H)
         return H
 
+    def hessian_penning_3D(self, pos_array):
+        """
+        Calculate Hessian of potential energy for a crystal defined by pos_array.
+
+        Parameters:
+        -----------
+        pos_array : array
+            The planar equilibrium position vector of the crystal.
+        
+        Returns:
+        --------
+        H : array
+            The Hessian of the potential energy of the crystal.
+        """
+        x = pos_array[0:self.Nion]
+        y = pos_array[self.Nion:2*self.Nion]
+        z = pos_array[2*self.Nion:]
+         
+        dx = x.reshape((x.size, 1)) - x
+        dy = y.reshape((y.size, 1)) - y
+        dz = z.reshape((z.size, 1)) - z
+        rsep = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
+
+        with np.errstate(divide='ignore'):
+            rsep5 = np.where(rsep != 0., rsep ** (-5), 0)
+
+        dxsq = dx ** 2
+        dysq = dy ** 2
+        dzsq = dz ** 2
+
+        # X derivatives, Y derivatives for alpha != beta
+        Hxx = np.mat((rsep ** 2 - 3 * dxsq) * rsep5)
+        Hyy = np.mat((rsep ** 2 - 3 * dysq) * rsep5)
+        Hzz = np.mat((rsep ** 2 - 3 * dzsq) * rsep5)
+
+        # Above, for alpha == beta
+        # np.diag usa diagnoal value to form a matrix
+        Hxx += np.mat(np.diag(-2 * self.md * (self.wr ** 2 - self.wr * self.wc + .5 -
+                                              self.delta) -
+                              np.sum((rsep ** 2 - 3 * dxsq) * rsep5, axis=0)))
+        Hyy += np.mat(np.diag(-2 * self.md * (self.wr ** 2 - self.wr * self.wc + .5 +
+                                              self.delta) -
+                              np.sum((rsep ** 2 - 3 * dysq) * rsep5, axis=0)))
+        
+        Hzz += np.mat(np.diag(2 * self.md  -
+                              np.sum((rsep ** 2 - 3 * dzsq) * rsep5, axis=0)))
+
+        Hxy = np.mat(-3 * dx * dy * rsep5)
+        Hxy += np.mat(np.diag(3 * np.sum(dx * dy * rsep5, axis=0)))
+        Hxz = np.mat(-3 * dx * dz * rsep5)
+        Hxz += np.mat(np.diag(3 * np.sum(dx * dz * rsep5, axis=0)))
+        Hyz = np.mat(-3 * dy * dz * rsep5)
+        Hyz += np.mat(np.diag(3 * np.sum(dy * dz * rsep5, axis=0)))
+
+        H = np.bmat([[Hxx, Hxy, Hxz], [Hxy, Hyy, Hyz], [Hxz, Hyz, Hzz]])
+        H = np.asarray(H)
+        return H
+
+
     def find_scaled_lattice_guess(self, mins, res):
         """
         Will generate a 2d hexagonal lattice based on the shells intialiization parameter.
