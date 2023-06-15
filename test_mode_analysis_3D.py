@@ -18,7 +18,7 @@ wcyc = charge*B/mass
 vwall = 5 #V 
 omega_z = 2*np.pi*1.58e6 #rad/s
 frot = 180 #kHz
-N = 2 #number of ions
+N = 25 #number of ions
 ma3D_instance = ma3D.ModeAnalysis(ionmass=ionmass
                                     ,omega_z=omega_z
                                     ,frot=frot
@@ -34,12 +34,19 @@ test_pos_3D = np.concatenate((test_pos_2D,np.zeros((N,))))
 #print(ma3D_instance.force_penning(test_pos_2D) - ma3D_instance.force_penning_3D(test_pos_3D)[:2*N])
 #print(ma3D_instance.hessian_penning_3D(test_pos_3D))
 #print(ma3D_instance.hessian_penning_3D(test_pos_3D)[:2*N,:2*N] - ma3D_instance.hessian_penning(test_pos_2D))
-print(ma3D_instance.calc_axial_hessian(test_pos_2D))
-print(ma3D_instance.hessian_penning_3D(test_pos_3D)[2*N:,2*N:]) 
-exit() 
+#print(ma3D_instance.calc_axial_hessian(test_pos_2D)) #scaling is off by a factor of minus 2
+#print(ma3D_instance.hessian_penning_3D(test_pos_3D)[2*N:,2*N:]) 
+#print(test_pos_2D)
+print(ma3D_instance.u) 
 ma3D_instance.run_3D()
-fig,ax = plt.subplots()
-print(ma3D.instance.uE_3D )
+test_pos_2D = ma3D_instance.u_3D[:2*N]
+test_pos_3D = ma3D_instance.u_3D
+test_pos_3D[2*N:] = 0
+print(ma3D_instance.pot_energy_3D(test_pos_3D))
+print(ma3D_instance.pot_energy(test_pos_2D))
+print(ma3D_instance.force_penning(test_pos_2D) - ma3D_instance.force_penning_3D(test_pos_3D)[:2*N])
+#ma3D_instance.show_crystal_3D()
+plt.show() 
 exit() 
 #plotting
 ma3D_instance.show_axial_freqs()

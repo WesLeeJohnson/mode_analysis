@@ -330,7 +330,10 @@ class ModeAnalysis:
         #Generate a lattice in dimensionless units
         self.u0_3D = self.find_scaled_lattice_guess_3D()
         #self.show_crystal_3D(pos_vect=self.u0_3D) 
-        self.u = self.find_eq_pos_3D(self.u0,self.method)
+        #print(self.u0_3D)
+        self.u_3D = self.find_eq_pos_3D(self.u0_3D,self.method)
+        #print(self.u_3D)
+        self.show_crystal_3D(pos_vect=self.u_3D)
         # Will attempt to nudge the crystal to a slightly lower energy state via some
         # random perturbation.
         # Only changes the positions if the perturbed potential energy was reduced.
@@ -476,7 +479,8 @@ class ModeAnalysis:
 
         if N == 1:
             # avoid placing leftover at same place 
-            x,y,z = np.random.random(),np.random.random(),np.random.random()
+            x,y,z = np.random.random()-1/2,np.random.random()-1/2,np.random.random()-1/2
+
             points.append([x,y,z])
             return np.array(points)
 
@@ -561,6 +565,7 @@ class ModeAnalysis:
 
         with np.errstate(divide='ignore'):
             Vc = np.where(rsep != 0., 1 / rsep, 0)
+
         V = np.sum(self.md * self.beta * (x ** 2 + y ** 2)) \
             + np.sum(self.md * self.delta * (x ** 2 - y ** 2)) \
                 + 0.5 * np.sum(Vc) + np.sum(self.md * z ** 2)
@@ -650,7 +655,7 @@ class ModeAnalysis:
 
         Ftrapx = -2 * self.md * ( - self.beta - self.delta) * x
         Ftrapy = -2 * self.md * ( - self.beta + self.delta) * y
-        Ftrapz = -2 * self.md * z
+        Ftrapz = 2 * self.md * z
 
         Fx = -np.sum(fx, axis=1) + Ftrapx
         Fy = -np.sum(fy, axis=1) + Ftrapy
@@ -876,6 +881,7 @@ class ModeAnalysis:
         """
         newton_tolerance = 1e-34
         bfgs_tolerance = 1e-34
+        method = "newton"
         if method == "newton":
 
             out = optimize.minimize(self.pot_energy_3D, u0, method='Newton-CG', jac=self.force_penning_3D,
@@ -886,7 +892,11 @@ class ModeAnalysis:
                                     options={'gtol': bfgs_tolerance, 'disp': False})  # not self.quiet})
         if (method != 'bfgs') & (method != 'newton'):
             print('method, '+method+', not recognized')
-            exit()
+        print(out) 
+        print('/n')
+        print(u0)
+        print(out.x)
+        print('/n')
         return out.x
 
     def calc_axial_hessian(self, pos_array):
@@ -1080,7 +1090,8 @@ class ModeAnalysis:
             fig = plt.figure()
             ax = fig.add_subplot(111,projection='3d')
         if pos_vect is None:
-            pos_vect = self.uE_3D
+            #pos_vect = self.uE_3D
+            pos_vect = self.u0_3D
         x = pos_vect[:self.Nion]
         y = pos_vect[self.Nion:2*self.Nion]
         z = pos_vect[2*self.Nion:]
