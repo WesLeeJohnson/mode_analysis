@@ -35,11 +35,19 @@ ma_old_instance = ma_old.ModeAnalysis(ionmass=ionmass
 ma_new_instance.run()
 ma_old_instance.run()
 
-ma_new_instance.show_cyc_freqs()
-ma_new_instance.show_ExB_freqs()
-ma_new_instance.show_axial_freqs()
+nrows,ncols = 3,3
+half = int(nrows*ncols/2+1/2)
+fig,axs = plt.subplots(nrows=nrows,ncols=ncols,figsize=(10,10))
+modes = np.hstack((np.arange(0,half),np.arange(N,N+half)))
+mode = 0
+for row in range(nrows):
+    for col in range(ncols):
+        ax = axs[row,col]
+        ma_new_instance.show_crystal_planar_mode(mode=modes[mode],ax=ax)
+        mode += 1
+plt.tight_layout()
+plt.tight_layout()
 plt.show()
-exit() 
 
 nrows,ncols = 4,4
 fig,axs = plt.subplots(nrows=nrows,ncols=ncols,figsize=(10,10))
@@ -47,11 +55,15 @@ mode = 18
 for row in range(nrows):
     for col in range(ncols):
         ax = axs[row,col]
-        ma_new_instance.show_crystal_modes(mode=mode,ax=ax)
+        ma_new_instance.show_crystal_axial_mode(mode=mode,ax=ax)
         mode -= 1
 plt.tight_layout()
 plt.show()
 
+ma_new_instance.show_cyc_freqs()
+ma_new_instance.show_ExB_freqs()
+ma_new_instance.show_axial_freqs()
+plt.show()
 
 print(ma_new_instance.axialEvects.shape)
 fig,axs = plt.subplots(nrows=1,ncols=2,figsize=(10,5))
