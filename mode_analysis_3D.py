@@ -41,37 +41,49 @@ class ModeAnalysis:
                 quiet=True, precision_solving=True,
                 method = 'bfgs'):
         """
-        This class solves the eigenvalue problem for a 2D ion crystal in a Penning trap.
+        This class solves the eigenvalue problem for a 3D ion crystal in a Penning trap.
 
-        The class find the normal vectors and frequencies along with the equilibrium positions. 
-        The class assumes that the ion crystal is planar, which may not be true for all trap parameters.
-        The class separates the axial and planar modes of motion.
+        The code solves the eigenvalue problem for a 3D ion crystal in a Penning trap.
+        The code first finds the equilibrium positions of the ions in the crystal.
+        The the code uses these posistions to find the stiffness matrix for the crystal.
+        The code then finds the eigenvalues and eigenvectors of the stiffness matrix.
 
         Parameters:
         -----------
+         
         N : int
             Number of ions in the crystal
+             
         XR : float
             Geometric factor for the rotating wall potential, Bryce Bullock @ NIST found it to be 3.082
+             
         omega_z : float
             Axial frequency of the trap, in Hz
+             
         ionmass : float
             Mass of the ions, in amu
+             
         B : float
             Magnetic field strength, in Tesla
+             
         frot : float
             Rotation frequency of the trap, in kHz
+             
         Vwall : float
             Voltage on the rotating wall electrode, in volts
+             
         quiet : bool
             If True, will not print anything
+             
         precision_solving : bool
             If True, will perturb the crystal to find a lower energy state
+             
         method : str
             Method to use for optimization. Either 'bfgs' or 'newton'
-
+             
         Returns:
         --------
+
         None
 
         Examples:
@@ -84,17 +96,19 @@ class ModeAnalysis:
         >>> ma_instance.run()
         >>> print(ma_instance.axialEvalsE)
         """
+
         self.method = method
         self.ionmass = ionmass
         self.m_Be = self.ionmass * self.amu
         self.quiet = quiet
         self.precision_solving = precision_solving
-        # Initialize basic variables such as physical constants
         self.Nion = N
 
         # for array of ion positions first half is x, last is y
         self.u0 = np.empty(2 * self.Nion)  # initial lattice
         self.u = np.empty(2 * self.Nion)  # equilibrium positions
+        self.u0_3D = np.empty(3 * self.Nion)  # initial lattice
+        self.u_3D = np.empty(3 * self.Nion)  # equilibrium positions
 
         # trap definitions
         self.B = B
@@ -124,9 +138,13 @@ class ModeAnalysis:
         self.axialEvects = []  # Axial eigenvectors
         self.planarEvals = []  # Planar eigenvalues
         self.planarEvects = []  # Planar Eigenvectors
+        self.Evects_3D = []  # Eigenvectors
+        self.Evals_3D = []  # Eigenvalues
 
         self.axialEvalsE = []  # Axial eigenvalues in experimental units
         self.planarEvalsE = []  # Planar eigenvalues in experimental units
+        self.Evects_3DE = []  # Eigenvectors in experimental units
+        self.Evals_3DE = []  # Eigenvalues in experimental units
 
         self.p0 = 0    # dimensionless potential energy of equilibrium crystal
         self.r = []
@@ -209,6 +227,34 @@ class ModeAnalysis:
         self.planar_Mmat   = np.diag(np.tile(self.md,2))
         self.hasrun = True
 
+    def run_3D(self):
+        """
+        Generates a 3D crystal from the generate_crystal method (by the find_scalled_lattice_guess method,
+        adjusts it into an eqilibirium position by find_eq_pos method)
+        and then computes the eigenvalues and eigenvectors of the axial modes by calc_axial_modes.
+
+        Sorts the eigenvalues and eigenvectors and stores them in self.Evals, self.Evects.
+        Stores the radial separations as well.
+
+        Parameters:
+        -----------
+        None
+
+        Returns:
+        --------
+        None
+        """
+        self.generate_crystal_3D()
+
+        self.axialEvals_raw, self.axialEvals, self.axialEvects = self.calc_axial_modes(self.u)
+        self.planarEvals, self.planarEvects, self.V = self.calc_planar_modes(self.u)
+        self.expUnits()  # make variables of outputs in experimental units
+        self.axial_hessian = -self.calc_axial_hessian(self.u)
+        self.planar_hessian= -self.V/2 
+        self.axial_Mmat    = np.diag(self.md)
+        self.planar_Mmat   = np.diag(np.tile(self.md,2))
+        self.hasrun = True
+
     def generate_crystal(self):
         """
         Finds the equilibrium position of the crystal by first generating a guess lattice, then solving and perturbing
@@ -224,13 +270,6 @@ class ModeAnalysis:
             the last N elements are the y positions.
         """
 
-        # This check hasn't been working properly, and so wmag has been set to
-        # 0 for the time being (July 2015, SBT)
-        if self.wmag > self.wrot:
-            print("Warning: Rotation frequency", self.wrot/(2*pi),
-                  " is below magnetron frequency of", float(self.wrot/(2*pi)))
-            return 0
-
         #Generate a lattice in dimensionless units
         self.u0 = self.find_scaled_lattice_guess(mins=1, res=50)
 
@@ -243,6 +282,55 @@ class ModeAnalysis:
 
 
 
+        # Will attempt to nudge the crystal to a slightly lower energy state via some
+        # random perturbation.
+        # Only changes the positions if the perturbed potential energy was reduced.
+
+        #Will perturb less for bigger crystals, as it takes longer depending on how many ions
+        #there are.
+        if self.precision_solving is True:
+            if self.quiet is False:
+                print("Perturbing crystal...")
+
+            if self.Nion <= 62:
+                for attempt in np.linspace(.05, .5, 50):
+                    self.u = self.perturb_position(self.u, attempt)
+            if 62 < self.Nion <= 126:
+                for attempt in np.linspace(.05, .5, 25):
+                    self.u = self.perturb_position(self.u, attempt)
+            if 127 <= self.Nion <= 200:
+                for attempt in np.linspace(.05, .5, 10):
+                    self.u = self.perturb_position(self.u, attempt)
+            if 201 <= self.Nion:
+                for attempt in np.linspace(.05, .3, 5):
+                    self.u = self.perturb_position(self.u, attempt)
+
+            if self.quiet is False:
+                pass
+
+        self.r, self.dx, self.dy, self.rsep = self.find_radial_separation(self.u)
+        self.p0 = self.pot_energy(self.u)
+        return self.u
+
+    def generate_crystal_3D(self):
+        """
+        Finds the equilibrium position of the crystal by first generating a guess lattice, then solving and perturbing
+
+        Parameters:
+        -----------
+        None
+
+        Returns:
+        --------
+        u : array
+            The planar equilibrium position vector of the crystal. The first N elements are the x positions,
+            the last N elements are the y positions.
+        """
+
+        #Generate a lattice in dimensionless units
+        self.u0 = self.find_scaled_lattice_guess_3D(mins=1, res=50) #TODO 
+
+        self.u = self.find_eq_pos_3D(self.u0,self.method)
         # Will attempt to nudge the crystal to a slightly lower energy state via some
         # random perturbation.
         # Only changes the positions if the perturbed potential energy was reduced.
@@ -330,6 +418,67 @@ class ModeAnalysis:
         # Restore mass array
         self.md = self.m / self.m_Be  # dimensionless mass
         return np.hstack((x0, y0))
+
+    def generate_lattice_3D(self):
+        """
+        Generate lattice for an arbitrary number of ions (self.Nion)
+        The lattice is a hexagonal lattice with a number of closed shells
+        calculated from the number of ions.
+
+        Parameters:
+        -----------
+        None
+
+        Returns:
+        --------
+        lattice : array
+            The planar equilibrium guess position vector of the crystal. 
+        """
+        # number of closed shells
+        num_shell  = 0
+        num_in_shells = []
+        num_in_shell = 0
+        sum_num_in_shells = 0
+        while sum_num_in_shells < self.Nion:
+            num_shell +=1
+            num_in_shell = num_shell **2
+            num_in_shells.append(num_in_shell)
+            sum_num_in_shells += num_in_shell
+        num_in_shells[-1] = self.Nion - np.sum(num_in_shells[:-1])
+        num_shells = len(num_in_shells)
+
+        lattice = np.empty((0,3))
+        for i in range(num_shells):
+            R = (i + 1)  
+            shell = self.generate_shell_3D(R, num_in_shells[i])
+            lattice = np.concatenate((lattice,shell)) 
+        return np.hstack((lattice[:,0],lattice[:,1],lattice[:,2]))
+
+    def generate_shell_3D(self,R, N):
+        points = []
+        increment = np.pi * (3 - np.sqrt(5))  # Golden angle increment
+
+        if N == 1:
+            # avoid placing leftover at same place 
+            x,y,z = np.random.random(),np.random.random(),np.random.random()
+            points.append([x,y,z])
+            return np.array(points)
+
+        for i in range(N):
+            y = (1 - (i / float(N - 1)) * 2)
+            radius = np.sqrt(1 - y * y)
+            theta = i * increment
+
+            x = np.cos(theta) * radius
+            z = np.sin(theta) * radius
+
+            x *= R
+            y *= R
+            z *= R
+
+            points.append([x, y, z])
+
+        return np.array(points)
 
     def pot_energy(self, pos_array):
         """
@@ -455,6 +604,50 @@ class ModeAnalysis:
         return H
 
     def find_scaled_lattice_guess(self, mins, res):
+        """
+        Will generate a 2d hexagonal lattice based on the shells intialiization parameter.
+        Guesses initial minimum separation of mins and then increases spacing until a local minimum of
+        potential energy is found.
+
+        This doesn't seem to do anything. Needs a fixin' - AK
+
+        :param mins: the minimum separation to begin with.
+        :param res: the resizing parameter added onto the minimum spacing.
+        :return: the lattice with roughly minimized potential energy (via spacing alone).
+        """
+
+        # Make a 2d lattice; u represents the position
+        uthen = self.generate_lattice()
+        uthen = uthen * mins
+        # Figure out the lattice's initial potential energy
+        pthen = self.pot_energy(uthen)
+
+        # Iterate through the range of minimum spacing in steps of res/resolution
+        for scale in np.linspace(mins, 10, res):
+            # Quickly make a 2d hex lattice; perhaps with some stochastic procedure?
+            uguess = uthen * scale
+            # Figure out the potential energy of that newly generated lattice
+            # print(uguess)
+            pnow = self.pot_energy(uguess)
+
+            # And if the program got a lattice that was less favorably distributed, conclude
+            # that we had a pretty good guess and return the lattice.
+            if pnow >= pthen:
+                # print("find_scaled_lattice: Minimum found")
+                # print "initial scale guess: " + str(scale)
+                # self.scale = scale
+                # print(scale)
+                return uthen
+            # If not, then we got a better guess, so store the energy score and current arrangement
+            # and try again for as long as we have mins and resolution to iterate through.
+            uthen = uguess
+            pthen = pnow
+        # If you're this far it means we've given up
+        # self.scale = scale
+        # print "find_scaled_lattice: no minimum found, returning last guess"
+        return uthen
+
+    def find_scaled_lattice_guess_3D(self, mins, res):
         """
         Will generate a 2d hexagonal lattice based on the shells intialiization parameter.
         Guesses initial minimum separation of mins and then increases spacing until a local minimum of
