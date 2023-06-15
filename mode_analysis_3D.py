@@ -747,7 +747,6 @@ class ModeAnalysis:
                               np.sum((rsep ** 2 - 3 * dxsq) * rsep5, axis=0)))
         Hyy += np.mat(np.diag(-2 * self.md * (-self.beta + self.delta) -
                               np.sum((rsep ** 2 - 3 * dysq) * rsep5, axis=0)))
-        
         Hzz += np.mat(np.diag(2 * self.md  -
                               np.sum((rsep ** 2 - 3 * dzsq) * rsep5, axis=0)))
 
@@ -944,18 +943,7 @@ class ModeAnalysis:
             The eigenvectors of the crystal. 
         """
 
-        x = pos_array[0:self.Nion]
-        y = pos_array[self.Nion:]
-
-        dx = x.reshape((x.size, 1)) - x
-        dy = y.reshape((y.size, 1)) - y
-        rsep = np.sqrt(dx ** 2 + dy ** 2)
-
-        with np.errstate(divide='ignore'):
-            rsep3 = np.where(rsep != 0., rsep ** (-3), 0)
-
-        K = np.diag((-1 + 0.5 * np.sum(rsep3, axis=0)))
-        K -= 0.5 * rsep3
+        K = self.calc_axial_hessian(pos_array)
         # Make first order system by making space twice as large
         Zn = np.zeros((self.Nion, self.Nion))
         eyeN = np.identity(self.Nion)
