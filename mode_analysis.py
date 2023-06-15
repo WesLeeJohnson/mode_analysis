@@ -713,7 +713,7 @@ class ModeAnalysis:
         ax.set_title('Ion Positions')
         return ax
         
-    def show_crystal_modes(self, pos_vect=None, Evects=None, mode = 0, ax=None,label=None):
+    def show_crystal_axial_modes(self, pos_vect=None, Evects=None, mode = 0, ax=None,label=None):
         """
         Plots the axial modes of the crystal, using a color map to show displacement.
 
