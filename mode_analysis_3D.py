@@ -261,12 +261,9 @@ class ModeAnalysis:
 
     def run_3D(self):
         """
-        Generates a 3D crystal from the generate_crystal method (by the find_scalled_lattice_guess method,
-        adjusts it into an eqilibirium position by find_eq_pos method)
-        and then computes the eigenvalues and eigenvectors of the axial modes by calc_axial_modes.
-
-        Sorts the eigenvalues and eigenvectors and stores them in self.Evals, self.Evects.
-        Stores the radial separations as well.
+        Generates a 3D crystal. Starts by creating a guess lattice in 3D. Then solves for the equilibrium position of the crystal.
+        Next it will perturb the crystal to try to find a lower energy state. Finally it will calculate the
+        final potential energy of the crystal. Then it will compute the eigenvalues and eigenvectors of the axial modes by calc_modes_3D.
 
         Parameters:
         -----------
