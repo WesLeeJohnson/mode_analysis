@@ -1050,6 +1050,7 @@ class ModeAnalysis:
         # make eigenvalues real.
         ind = np.argsort(np.absolute(np.imag(Eval)))
         Eval = np.imag(Eval[ind])
+        print(np.shape(Eval))
         Eval = Eval[Eval >= 0]      # toss the negative eigenvalues
         Evect = Evect[:, ind]    # sort eigenvectors accordingly
 
@@ -1062,12 +1063,7 @@ class ModeAnalysis:
             with np.errstate(divide='ignore'):
                 Evect[:, i] = np.where(np.sqrt(norm) != 0., Evect[:, i]/np.sqrt(norm), 0)
 
-        # if there are extra zeros, chop them
-        #Eval = Eval[(Eval.size - 3 * self.Nion):]
-        Eval = Eval[Eval != 0]
-        Eval = np.asarray(Eval)
         Evect = np.asarray(Evect)
-        #print(Eval, Evect, V)
         return Eval, Evect, V
 
     def show_crystal(self, pos_vect=None,ax = None,label='Ion Positions',color='blue'):
