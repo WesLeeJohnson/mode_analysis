@@ -208,19 +208,25 @@ class ModeAnalysis:
         stable : bool
             True if the trap is stable, False if the trap is unstable.
         """ 
-        stable = True
+        stable = True 
 
-        if self.wmag > self.wrot:
-            print("Warning: rotation frequency of %1.2f kHz is below magnetron frequency of %1.2f kHz" % (self.wrot/(2*pi*1e3), self.wmag/(2*pi*1e3)))
-            print('This will not provide confinement ')
-            print('beta = %1.2f' % self.beta)
+        if self.wcyc < 2*self.wz:
+            print('Warning: cyclotron frequency of %1.2f MHz is below two times the axial frequency of %1.2f MHz' % (self.wcyc/(2*pi*1e6), self.wz/(pi*1e6)))
             stable = False
+        
+        if self.beta < 0: 
+            if self.wmag > self.wrot:
+                print("Warning: rotation frequency of %1.2f kHz is below magnetron frequency of %1.2f kHz" % (self.wrot/(2*pi*1e3), self.wmag/(2*pi*1e3)))
+                stable = False
 
-        if self.wrot > self.wcyc - self.wmag:
-            print("Warning: rotation frequency of %1.2f kHz is too high must be less than %1.2f kHz" % (self.wrot/(2*pi*1e3), (self.wcyc - self.wmag)/(2*pi*1e3)))
-            print('This will not provide confinement ')
-            print('beta = %1.2f' % self.beta)
-            stable = False
+            if self.wrot > self.wcyc - self.wmag:
+                print("Warning: rotation frequency of %1.2f kHz is too high must be less than %1.2f kHz" % (self.wrot/(2*pi*1e3), (self.wcyc - self.wmag)/(2*pi*1e3)))
+                stable = False
+
+        else: 
+            if self.beta < self.delta:
+                print("Warning: rotating wall strength of %1.2f is too high must be less than %1.2f" % (self.delta, self.beta)) 
+                stable = False
         
         return stable
 
@@ -241,6 +247,8 @@ class ModeAnalysis:
         --------
         None
         """
+        assert self.is_trap_stable(), "Trap is not stable"
+         
         self.generate_crystal()
 
         self.axialEvals_raw, self.axialEvals, self.axialEvects = self.calc_axial_modes(self.u)
@@ -249,7 +257,7 @@ class ModeAnalysis:
         self.hasrun = True
 
         if not self.is_plane_stable():
-            print('Warning: 2D planar crystal is not stable')
+            print('Warning: 2D planar crystal is not stable. (Axial modes with calculated zero frequency)')
 
     def run_3D(self):
         """
@@ -268,6 +276,8 @@ class ModeAnalysis:
         --------
         None
         """
+        assert self.is_trap_stable(), "Trap is not stable"
+
         self.generate_crystal_3D()
 
         self.Evals_3D, self.Evects_3D, self.V_3D = self.calc_modes_3D(self.u_3D)
