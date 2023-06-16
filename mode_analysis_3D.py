@@ -148,11 +148,8 @@ class ModeAnalysis:
         self.Evals_3DE = np.array([])  # Eigenvalues in experimental units
 
         self.p0 = 0    # dimensionless potential energy of equilibrium crystal
-        #self.r = []
-        #self.rsep = []
-        #self.dx = []
-        #self.dy = []
-
+        self.p0_3D = 0    # dimensionless potential energy of equilibrium crystal
+        
         self.hasrun = False
 
     def dimensionless(self):
@@ -997,9 +994,12 @@ class ModeAnalysis:
         Eval, Evect = np.linalg.eig(firstOrder) 
 
         # make eigenvalues real.
-        ind = np.argsort(np.absolute(np.imag(Eval)))
-        Eval = np.imag(Eval[ind])
-        Eval = Eval[Eval >= 0]      # toss the negative eigenvalues
+        Eval = np.imag(Eval)
+        # sort eigenvalues
+        ind = np.argsort(Eval)
+        Eval = Eval[ind]
+        # toss the negative eigenvalues
+        Eval = Eval[2*self.Nion:]
         Evect = Evect[:, ind]    # sort eigenvectors accordingly
 
         # Normalize by energy of mode
@@ -1010,7 +1010,6 @@ class ModeAnalysis:
 
             with np.errstate(divide='ignore'):
                 Evect[:, i] = np.where(np.sqrt(norm) != 0., Evect[:, i]/np.sqrt(norm), 0)
-            #Evect[:, i] = Evect[:, i]/np.sqrt(norm)
 
         # if there are extra zeros, chop them
         Eval = Eval[(Eval.size - 2 * self.Nion):]
