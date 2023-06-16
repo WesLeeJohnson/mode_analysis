@@ -1030,28 +1030,21 @@ class ModeAnalysis:
 
         V = -self.hessian_penning_3D(pos_array)  # -Hessian
         Zn = np.zeros((self.Nion, self.Nion)) #Nion, number of ions
-        Z2n = np.zeros((2 * self.Nion, 2 * self.Nion))
         Z3n = np.zeros((3 * self.Nion, 3 * self.Nion))
         offdiag = (2 * self.wr - self.wc) * np.identity(self.Nion) # np.identity: unitary matrix
         A = np.bmat([[Zn, offdiag, Zn], [-offdiag, Zn, Zn], [Zn, Zn, Zn]])
-        Mmat = np.diag(np.concatenate((self.md,self.md))) #md =1
         Mmat3 = np.diag(np.tile(self.md,3))
-        Minv = np.linalg.inv(Mmat)
         Minv3 = np.linalg.inv(Mmat3)
-        #firstOrder = np.bmat([[Z2n, np.identity(2 * self.Nion)], [np.dot(Minv,V/2), A]])
         firstOrder = np.bmat([[Z3n, np.identity(3 * self.Nion)], [np.dot(Minv3,V/2), A]])
 
-        #mp.dps = 25
-        #firstOrder = mp.matrix(firstOrder)
-        #Eval, Evect = mp.eig(firstOrder)
         Eval, Evect = np.linalg.eig(firstOrder) 
-        # currently giving too many zero modes (increase numerical precision?)
 
         # make eigenvalues real.
-        ind = np.argsort(np.absolute(np.imag(Eval)))
-        Eval = np.imag(Eval[ind])
+        Eval = np.imag(Eval)
+        ind = np.argsort(Eval)
+        Eval = Eval[ind]
+        Eval = Eval[3*self.Nion:]      # toss the negative eigenvalues
         print(np.shape(Eval))
-        Eval = Eval[Eval >= 0]      # toss the negative eigenvalues
         Evect = Evect[:, ind]    # sort eigenvectors accordingly
 
         # Normalize by energy of mode
