@@ -4,7 +4,7 @@ import scipy.constants as cons
 import numpy as np
 import scipy.optimize as optimize
 import matplotlib.pyplot as plt
-import scipy.linalg as LA
+#import scipy.linalg as LA
 __author__ = 'Wes Johnson'
 
 # -*- coding: utf-8 -*-
@@ -329,11 +329,8 @@ class ModeAnalysis:
 
         #Generate a lattice in dimensionless units
         self.u0_3D = self.find_scaled_lattice_guess_3D()
-        #self.show_crystal_3D(pos_vect=self.u0_3D) 
-        #print(self.u0_3D)
         self.u_3D = self.find_eq_pos_3D(self.u0_3D,self.method)
-        #print(self.u_3D)
-        self.show_crystal_3D(pos_vect=self.u_3D)
+        #self.show_crystal_3D(pos_vect=self.u_3D)
         # Will attempt to nudge the crystal to a slightly lower energy state via some
         # random perturbation.
         # Only changes the positions if the perturbed potential energy was reduced.
@@ -791,16 +788,11 @@ class ModeAnalysis:
             # Quickly make a 2d hex lattice; perhaps with some stochastic procedure?
             uguess = uthen * scale
             # Figure out the potential energy of that newly generated lattice
-            # print(uguess)
             pnow = self.pot_energy(uguess)
 
             # And if the program got a lattice that was less favorably distributed, conclude
             # that we had a pretty good guess and return the lattice.
             if pnow >= pthen:
-                # print("find_scaled_lattice: Minimum found")
-                # print "initial scale guess: " + str(scale)
-                # self.scale = scale
-                # print(scale)
                 return uthen
             # If not, then we got a better guess, so store the energy score and current arrangement
             # and try again for as long as we have mins and resolution to iterate through.
@@ -808,7 +800,6 @@ class ModeAnalysis:
             pthen = pnow
         # If you're this far it means we've given up
         # self.scale = scale
-        # print "find_scaled_lattice: no minimum found, returning last guess"
         return uthen
 
     def find_scaled_lattice_guess_3D(self): 
@@ -881,7 +872,7 @@ class ModeAnalysis:
         """
         newton_tolerance = 1e-34
         bfgs_tolerance = 1e-34
-        method = "newton"
+        #method = "newton"
         if method == "newton":
 
             out = optimize.minimize(self.pot_energy_3D, u0, method='Newton-CG', jac=self.force_penning_3D,
@@ -892,11 +883,6 @@ class ModeAnalysis:
                                     options={'gtol': bfgs_tolerance, 'disp': False})  # not self.quiet})
         if (method != 'bfgs') & (method != 'newton'):
             print('method, '+method+', not recognized')
-        print(out) 
-        print('/n')
-        print(u0)
-        print(out.x)
-        print('/n')
         return out.x
 
     def calc_axial_hessian(self, pos_array):
@@ -1104,7 +1090,7 @@ class ModeAnalysis:
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
         ax.legend()
-        
+        ax.set_box_aspect([1,1,1]) # make axes equal 
         return ax
 
 
