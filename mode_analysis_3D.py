@@ -894,7 +894,6 @@ class ModeAnalysis:
         """
         newton_tolerance = 1e-34
         bfgs_tolerance = 1e-34
-        #method = "newton"
         if method == "newton":
 
             out = optimize.minimize(self.pot_energy_3D, u0, method='Newton-CG', jac=self.force_penning_3D,
@@ -1071,7 +1070,6 @@ class ModeAnalysis:
         ind = np.argsort(Eval)
         Eval = Eval[ind]
         Eval = Eval[3*self.Nion:]      # toss the negative eigenvalues
-        print(np.shape(Eval))
         Evect = Evect[:, ind]    # sort eigenvectors accordingly
 
         # Normalize by energy of mode
@@ -1197,7 +1195,6 @@ class ModeAnalysis:
         y = y*1e6
         z = np.real(Evect)[:self.Nion]
         clim = np.max(np.abs(Evect))
-        print(np.shape(self.axialEvects));print(self.axialEvects)
         cmap = plt.get_cmap('seismic')
         ax.scatter(x,y,c=z,cmap=cmap,vmin=-clim,vmax=clim)
         ax.set_xlabel('x ($\mu$m)')

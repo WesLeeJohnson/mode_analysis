@@ -64,6 +64,7 @@ ma3D_instance = ma3D.ModeAnalysis(ionmass=ionmass
                                     ,N=N
                                     ,Vwall=vwall
                                     ,precision_solving=True
+                                    ,method='newton'
                                     )
 ma3D_instance.run()
 ma3D_instance.run_3D()
