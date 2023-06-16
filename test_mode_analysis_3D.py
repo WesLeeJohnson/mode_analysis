@@ -19,7 +19,8 @@ vwall = 10 #V
 omega_z = 2*np.pi*1.58e6 #rad/s
 frot = wcyc/(2*np.pi*1000)/2*1.9 #kHz
 frot = 180 #kHz
-N = 7 #number of ions
+frot = 201.25 #kHz
+N = 61 #number of ions
 ma3D_instance = ma3D.ModeAnalysis(ionmass=ionmass
                                     ,omega_z=omega_z
                                     ,frot=frot
@@ -57,6 +58,11 @@ planar_freqs = ma3D_instance.planarEvalsE
 axial_freqs = ma3D_instance.axialEvalsE
 modes_2D = np.hstack((planar_freqs,axial_freqs))
 modes_3D = ma3D_instance.Evals_3DE
+font_size_ticks = 16
+font_size_labels = 20
+font_size_title = 24
+font_size_legend = 20 
+font_size_annotation = 18
 fig,ax = plt.subplots(figsize=(10,10))
 modes_nums_2D = np.arange(0,len(modes_2D))
 modes_nums_3D = np.arange(0,len(modes_3D))
@@ -64,11 +70,21 @@ modes_2D = modes_2D/2/np.pi/1e6
 modes_3D = modes_3D/2/np.pi/1e6
 modes_2D = np.sort(modes_2D)
 modes_3D = np.sort(modes_3D)
-ax.plot(modes_nums_2D,modes_2D,'o',label='2D',color='b')
 ax.plot(modes_nums_3D,modes_3D,'o',label='3D',color='r')
-ax.set_xlabel('Mode Number')
-ax.set_ylabel('Frequency (MHz)')
-ax.legend()
+ax.plot(modes_nums_2D,modes_2D,'x',label='2D',color='b')
+ax.set_xlabel('Mode Number',fontsize=font_size_labels)
+ax.set_ylabel('Frequency (MHz)',fontsize=font_size_labels)
+ax.legend(fontsize=font_size_legend)
+ax.set_title('2D and 3D Mode Calculation, $f_r$ = {:.2f} kHz'.format(frot)
+             ,fontsize=font_size_title)
+ax.axes.tick_params(labelsize=font_size_ticks)
+mse, rmse, correlation, cosine_similarity, euclidean_distance = calculate_similarity(modes_2D,modes_3D)
+ax.annotate('MSE = {:.2f}'.format(mse)+
+            '\nCorrelation = {:.2f}'.format(correlation)+\
+                '\nCosine Similarity = {:.2f}'.format(cosine_similarity)+\
+                    '\nEuclidean Distance = {:.2f}'.format(euclidean_distance)
+                    ,xy=(0.05,0.5),xycoords='axes fraction',fontsize=font_size_annotation
+            )
 print(calculate_similarity(modes_2D,modes_3D))
 plt.show();exit()
 
