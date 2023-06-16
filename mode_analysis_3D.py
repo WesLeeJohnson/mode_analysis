@@ -195,7 +195,7 @@ class ModeAnalysis:
         self.axialEvalsE_raw = self.wz * self.axialEvals_raw
         self.axialEvalsE = self.wz * self.axialEvals
         self.planarEvalsE = self.wz * self.planarEvals
-        #self.Evals_3DE = self.wz * self.Evals_3D #TODO convert the units of the eigenvalues
+        self.Evals_3DE = self.wz * self.Evals_3D 
         # eigenvectors are dimensionless anyway
 
     def run(self):
@@ -251,13 +251,12 @@ class ModeAnalysis:
         self.generate_crystal_3D()
 
         self.Evals_3D, self.Evects_3D, self.V_3D = self.calc_modes_3D(self.u_3D)
-
         self.expUnits()  # make variables of outputs in experimental units
         #self.axial_hessian = -self.calc_axial_hessian(self.u)
         #self.planar_hessian= -self.V/2 
         #self.axial_Mmat    = np.diag(self.md)
         #self.planar_Mmat   = np.diag(np.tile(self.md,2))
-        self.hasrun = True
+        self.hasrun_3D = True
 
     def generate_crystal(self):
         """
@@ -1062,13 +1061,13 @@ class ModeAnalysis:
 
             with np.errstate(divide='ignore'):
                 Evect[:, i] = np.where(np.sqrt(norm) != 0., Evect[:, i]/np.sqrt(norm), 0)
-            #Evect[:, i] = Evect[:, i]/np.sqrt(norm)
 
         # if there are extra zeros, chop them
         #Eval = Eval[(Eval.size - 3 * self.Nion):]
         Eval = Eval[Eval != 0]
         Eval = np.asarray(Eval)
         Evect = np.asarray(Evect)
+        #print(Eval, Evect, V)
         return Eval, Evect, V
 
     def show_crystal(self, pos_vect=None,ax = None,label='Ion Positions',color='blue'):

@@ -31,6 +31,27 @@ ma3D_instance = ma3D.ModeAnalysis(ionmass=ionmass
 ma3D_instance.run()
 ma3D_instance.run_3D()
 
+def calculate_similarity(array1, array2):
+    # Mean Squared Error (MSE)
+    mse = np.mean((array1 - array2)**2)
+
+    # Root Mean Squared Error (RMSE)
+    rmse = np.sqrt(mse)
+
+    # Pearson Correlation Coefficient
+    correlation = np.corrcoef(array1, array2)[0, 1]
+
+    # Cosine Similarity
+    dot_product = np.dot(array1, array2)
+    norm1 = np.linalg.norm(array1)
+    norm2 = np.linalg.norm(array2)
+    cosine_similarity = dot_product / (norm1 * norm2)
+
+    # Euclidean Distance
+    euclidean_distance = np.linalg.norm(array1 - array2)
+
+    return mse, rmse, correlation, cosine_similarity, euclidean_distance
+
 #compare the eigenfrequencies of the 2D and 3D crystals
 planar_freqs = ma3D_instance.planarEvalsE
 axial_freqs = ma3D_instance.axialEvalsE
@@ -43,13 +64,12 @@ modes_2D = modes_2D/2/np.pi/1e6
 modes_3D = modes_3D/2/np.pi/1e6
 modes_2D = np.sort(modes_2D)
 modes_3D = np.sort(modes_3D)
-print(modes_2D)
-print(modes_3D)
 ax.plot(modes_nums_2D,modes_2D,'o',label='2D',color='b')
 ax.plot(modes_nums_3D,modes_3D,'o',label='3D',color='r')
 ax.set_xlabel('Mode Number')
 ax.set_ylabel('Frequency (MHz)')
 ax.legend()
+print(calculate_similarity(modes_2D,modes_3D))
 plt.show();exit()
 
 
