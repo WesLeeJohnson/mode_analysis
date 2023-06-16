@@ -311,7 +311,6 @@ class ModeAnalysis:
             if self.quiet is False:
                 pass
 
-        self.r, self.dx, self.dy, self.rsep = self.find_radial_separation(self.u)
         self.p0 = self.pot_energy(self.u)
         return self.u
 
@@ -358,7 +357,6 @@ class ModeAnalysis:
             if self.quiet is False:
                 pass
 
-        #self.r, self.dx, self.dy, self.rsep = self.find_radial_separation(self.u)
         self.p0_3D = self.pot_energy_3D(self.u_3D)
         return self.u_3D
 
