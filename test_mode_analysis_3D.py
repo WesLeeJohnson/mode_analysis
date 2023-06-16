@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import mode_analysis_3D as ma3D
 from scipy import constants as const
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
 
 
 #function to calculate the similarity between two vectors
@@ -51,9 +52,11 @@ vwall = 10 #V
 omega_z = 2*np.pi*1.58e6 #rad/s
 frot = wcyc/(2*np.pi*1000)/2*1.9 #kHz
 frot = 180 #kHz
-frot = 201.26 #kHz
-frot = 201.3
+frot = 201 #kHz
 N = 61 #number of ions
+
+
+#run the 3D mode analysis
 ma3D_instance = ma3D.ModeAnalysis(ionmass=ionmass
                                     ,omega_z=omega_z
                                     ,frot=frot
@@ -84,11 +87,11 @@ plt.show()
 #get the mode frequencuies of the 2D and 3D calculations
 planar_freqs = ma3D_instance.planarEvalsE
 axial_freqs = ma3D_instance.axialEvalsE
-modes_2D = np.hstack((planar_freqs,axial_freqs))
+modes_2D = np.hstack((planar_freqs[:N],axial_freqs))
 modes_3D = ma3D_instance.Evals_3DE
 modes_2D = modes_2D/2/np.pi/1e6 
 modes_3D = modes_3D/2/np.pi/1e6
-modes_2D = np.sort(modes_2D)
+#modes_2D = np.sort(modes_2D)
 modes_3D = np.sort(modes_3D)
 ExB_2D = modes_2D[:N]
 ExB_3D = modes_3D[:N]
@@ -103,7 +106,7 @@ ExB_modes_nums_3D = np.arange(0,len(ExB_3D))
 axial_modes_nums_2D = np.arange(0,len(axial_2D)) + len(ExB_2D)
 axial_modes_nums_3D = np.arange(0,len(axial_3D)) + len(ExB_3D)
 ax.plot(ExB_modes_nums_3D,ExB_3D,'o',label='3D ExB',color='royalblue',markersize=point_size)
-ax.plot(ExB_modes_nums_2D,ExB_2D,'x',label='2D ExB',color='lightorange',markersize=point_size)
+ax.plot(ExB_modes_nums_2D,ExB_2D,'x',label='2D ExB',color='orange',markersize=point_size)
 ax.plot(axial_modes_nums_3D,axial_3D,'o',label='3D axial',color='blue',markersize=point_size)
 ax.plot(axial_modes_nums_2D,axial_2D,'x',label='2D axial',color='red',markersize=point_size)
 ax.set_xlabel('Mode Number',fontsize=font_size_labels)
@@ -112,7 +115,18 @@ ax.legend(fontsize=font_size_legend)
 ax.set_title('ExB and Axial Modes, $f_r$ = {:.2f} kHz'.format(frot)
              ,fontsize=font_size_title)
 ax.axes.tick_params(labelsize=font_size_ticks)
+inset_ax = inset_axes(ax, width="30%", height="30%", loc='lower right')
+
+# Plotting the inset data
+inset_ax.plot(ExB_modes_nums_3D[N-5:], ExB_3D[N-5:], 'o', color='royalblue', markersize=point_size)
+inset_ax.plot(ExB_modes_nums_2D[N-5:], ExB_2D[N-5:], 'x', color='orange', markersize=point_size)
+inset_ax.plot(axial_modes_nums_3D[:5], axial_3D[:5], 'o', color='blue', markersize=point_size)
+inset_ax.plot(axial_modes_nums_2D[:5], axial_2D[:5], 'x', color='red', markersize=point_size)
+inset_ax.tick_params(which='both', bottom=False, top=False, left=False, right=False,labelbottom=False, labelleft=True)
+ax.indicate_inset_zoom(inset_ax, edgecolor="black")
+mark_inset(ax, inset_ax, loc1=1, loc2=3, fc="none", ec="0.5")
 plt.show()
+
 
 
 
