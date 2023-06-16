@@ -312,32 +312,29 @@ class ModeAnalysis:
         self.p0 = self.pot_energy(self.u)
         return self.u
 
-    def generate_crystal_3D(self):
+    def generate_crystal_3D(self,attempts=np.linspace(.1, 1, 25)[::-1]):
         """
-        Finds the equilibrium position of the crystal by first generating a guess lattice, then solving and perturbing
-
+        Starts by creating a guess lattice in 3D. Then solves for the equilibrium position of the crystal.
+        Next it will perturb the crystal to try to find a lower energy state. Finally it will calculate the
+        final potential energy of the crystal.
+        
         Parameters:
         -----------
-        None
-
+        attempts : array
+            The array of perturbation attempts. The gaussian is centered at 1 but has a variance of attempt. 
+        
         Returns:
         --------
         u : array
             The planar equilibrium position vector of the crystal. The first N elements are the x positions,
-            the last N elements are the y positions.
         """
 
         #Generate a lattice in dimensionless units
         self.u0_3D = self.find_scaled_lattice_guess_3D()
         self.u_3D = self.find_eq_pos_3D(self.u0_3D,self.method)
-    
-        # Will attempt to nudge the crystal to a slightly lower energy state via some
-        # random perturbation.
-        # Only changes the positions if the perturbed potential energy was reduced.
 
-        #Will perturb less for bigger crystals, as it takes longer depending on how many ions
-        #there are.
-        attempts = np.linspace(.1, 1, 25)[::-1]
+        # Will attempt to nudge the crystal to a slightly lower energy state via some
+        # random perturbation.    
         if self.precision_solving is True:
             if self.quiet is False:
                 print("Perturbing crystal...")
@@ -1167,12 +1164,22 @@ class ModeAnalysis:
 
     def perturb_position_3D(self, pos_vect, strength=.1):
         """
-        TODO: add docstring
+        This function is the same as perturb_position, but for 3D crystals.
+
+        Parameters:
+        -----------
+        pos_vect : array
+            The planar equilibrium position vector of the crystal. The first N elements are the x positions,
+            the next N are the y positions, and the last N are the z positions. 
+        strength : float
+            The variance of a normal distribution to sample the proportion to displace each ion by.
+        
+        Returns:
+        --------
+        pos_vect : array
         """
         unudge = self.find_eq_pos_3D([coord * abs(np.random.normal(1, strength)) for coord in pos_vect])
         if self.pot_energy_3D(unudge) < self.pot_energy_3D(pos_vect):
-            print('perturbed')
-            print(self.pot_energy_3D(unudge))
             return unudge
         else:
             return pos_vect
