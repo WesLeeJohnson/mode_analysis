@@ -218,7 +218,15 @@ class ModeAnalysis:
         if self.wmag > self.wrot:
             print("Warning: rotation frequency of %1.2f kHz is below magnetron frequency of %1.2f kHz" % (self.wrot/(2*pi*1e3), self.wmag/(2*pi*1e3)))
             print('This will not provide confinement ')
+            print('beta = %1.2f' % self.beta)
             return 0
+
+        if self.wrot > self.wcyc - self.wmag:
+            print("Warning: rotation frequency of %1.2f kHz is too high must be less than %1.2f kHz" % (self.wrot/(2*pi*1e3), (self.wcyc - self.wmag)/(2*pi*1e3)))
+            print('This will not provide confinement ')
+            print('beta = %1.2f' % self.beta)
+            return 0
+
 
         self.generate_crystal()
 
