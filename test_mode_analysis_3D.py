@@ -9,29 +9,8 @@ import matplotlib.pyplot as plt
 import mode_analysis_3D as ma3D
 from scipy import constants as const
 
-#crystal parameters
-ionmass = 9.012182 #Be
-charge = const.elementary_charge
-mass = ionmass*const.atomic_mass
-B = 4.4566 #T
-wcyc = charge*B/mass
-vwall = 10 #V 
-omega_z = 2*np.pi*1.58e6 #rad/s
-frot = wcyc/(2*np.pi*1000)/2*1.9 #kHz
-frot = 180 #kHz
-frot = 201.25 #kHz
-N = 61 #number of ions
-ma3D_instance = ma3D.ModeAnalysis(ionmass=ionmass
-                                    ,omega_z=omega_z
-                                    ,frot=frot
-                                    ,B=B
-                                    ,N=N
-                                    ,Vwall=vwall
-                                    ,precision_solving=True
-                                    )
-ma3D_instance.run()
-ma3D_instance.run_3D()
 
+#function to calculate the similarity between two vectors
 def calculate_similarity(array1, array2):
     # Mean Squared Error (MSE)
     mse = np.mean((array1 - array2)**2)
@@ -52,26 +31,98 @@ def calculate_similarity(array1, array2):
     euclidean_distance = np.linalg.norm(array1 - array2)
 
     return mse, rmse, correlation, cosine_similarity, euclidean_distance
+plt.show()
 
-#compare the eigenfrequencies of the 2D and 3D crystals
-planar_freqs = ma3D_instance.planarEvalsE
-axial_freqs = ma3D_instance.axialEvalsE
-modes_2D = np.hstack((planar_freqs,axial_freqs))
-modes_3D = ma3D_instance.Evals_3DE
+#plotting parameters
 font_size_ticks = 16
 font_size_labels = 20
 font_size_title = 24
 font_size_legend = 20 
 font_size_annotation = 18
-fig,ax = plt.subplots(figsize=(10,10))
-modes_nums_2D = np.arange(0,len(modes_2D))
-modes_nums_3D = np.arange(0,len(modes_3D))
+point_size = 10
+
+#crystal parameters
+ionmass = 9.012182 #Be
+charge = const.elementary_charge
+mass = ionmass*const.atomic_mass
+B = 4.4566 #T
+wcyc = charge*B/mass
+vwall = 10 #V 
+omega_z = 2*np.pi*1.58e6 #rad/s
+frot = wcyc/(2*np.pi*1000)/2*1.9 #kHz
+frot = 180 #kHz
+frot = 201.26 #kHz
+frot = 201.3
+N = 61 #number of ions
+ma3D_instance = ma3D.ModeAnalysis(ionmass=ionmass
+                                    ,omega_z=omega_z
+                                    ,frot=frot
+                                    ,B=B
+                                    ,N=N
+                                    ,Vwall=vwall
+                                    ,precision_solving=True
+                                    )
+ma3D_instance.run()
+ma3D_instance.run_3D()
+
+
+
+
+
+
+#compare the positions of the 2D and 3D crystals
+test_pos_3D = ma3D_instance.u_3D
+ori_pos_3D = np.concatenate((ma3D_instance.u,np.zeros((N,))))
+ax = ma3D_instance.show_crystal_3D(pos_vect=test_pos_3D,label='3D, PE = {:.6f} '.format(ma3D_instance.pot_energy_3D(test_pos_3D)),color='b')
+ma3D_instance.show_crystal_3D(pos_vect=ori_pos_3D,ax=ax,color='r',label='2D, PE = {:.6f} '.format(ma3D_instance.pot_energy_3D(ori_pos_3D)))
+plt.show()
+#ma3D_instance.show_axial_freqs()
+#ma3D_instance.show_cyc_freqs()
+#ma3D_instance.show_ExB_freqs()
+#plt.show()
+
+#get the mode frequencuies of the 2D and 3D calculations
+planar_freqs = ma3D_instance.planarEvalsE
+axial_freqs = ma3D_instance.axialEvalsE
+modes_2D = np.hstack((planar_freqs,axial_freqs))
+modes_3D = ma3D_instance.Evals_3DE
 modes_2D = modes_2D/2/np.pi/1e6 
 modes_3D = modes_3D/2/np.pi/1e6
 modes_2D = np.sort(modes_2D)
 modes_3D = np.sort(modes_3D)
-ax.plot(modes_nums_3D,modes_3D,'o',label='3D',color='r')
-ax.plot(modes_nums_2D,modes_2D,'x',label='2D',color='b')
+ExB_2D = modes_2D[:N]
+ExB_3D = modes_3D[:N]
+axial_2D = modes_2D[N:2*N]
+axial_3D = modes_3D[N:2*N]
+
+
+#compare the ExB and axial mode branch frequencies for the 2D and 3D calculations: 
+fig,ax = plt.subplots(figsize=(8,8))
+ExB_modes_nums_2D = np.arange(0,len(ExB_2D))
+ExB_modes_nums_3D = np.arange(0,len(ExB_3D))
+axial_modes_nums_2D = np.arange(0,len(axial_2D)) + len(ExB_2D)
+axial_modes_nums_3D = np.arange(0,len(axial_3D)) + len(ExB_3D)
+ax.plot(ExB_modes_nums_3D,ExB_3D,'o',label='3D ExB',color='royalblue',markersize=point_size)
+ax.plot(ExB_modes_nums_2D,ExB_2D,'x',label='2D ExB',color='lightorange',markersize=point_size)
+ax.plot(axial_modes_nums_3D,axial_3D,'o',label='3D axial',color='blue',markersize=point_size)
+ax.plot(axial_modes_nums_2D,axial_2D,'x',label='2D axial',color='red',markersize=point_size)
+ax.set_xlabel('Mode Number',fontsize=font_size_labels)
+ax.set_ylabel('Frequency (MHz)',fontsize=font_size_labels)
+ax.legend(fontsize=font_size_legend)
+ax.set_title('ExB and Axial Modes, $f_r$ = {:.2f} kHz'.format(frot)
+             ,fontsize=font_size_title)
+ax.axes.tick_params(labelsize=font_size_ticks)
+plt.show()
+
+
+
+#compare the eigenfrequencies of the 2D and 3D crystals
+fig,ax = plt.subplots(figsize=(10,10))
+modes_nums_2D = np.arange(0,len(modes_2D))
+modes_nums_3D = np.arange(0,len(modes_3D))
+assert len(modes_2D) == len(modes_3D), 'The number of modes in the 2D and 3D crystals are not the same'
+ax.plot(modes_nums_3D,modes_3D,'o',label='3D',color='r',markersize=point_size)
+ax.plot(modes_nums_2D,modes_2D,'x',label='2D',color='b',markersize=point_size)
 ax.set_xlabel('Mode Number',fontsize=font_size_labels)
 ax.set_ylabel('Frequency (MHz)',fontsize=font_size_labels)
 ax.legend(fontsize=font_size_legend)
@@ -85,21 +136,8 @@ ax.annotate('MSE = {:.2f}'.format(mse)+
                     '\nEuclidean Distance = {:.2f}'.format(euclidean_distance)
                     ,xy=(0.05,0.5),xycoords='axes fraction',fontsize=font_size_annotation
             )
-print(calculate_similarity(modes_2D,modes_3D))
 plt.show();exit()
 
 
 
 
-#compare the positions of the 2D and 3D crystals
-test_pos_3D = ma3D_instance.u_3D
-ori_pos_3D = np.concatenate((ma3D_instance.u,np.zeros((N,))))
-ax = ma3D_instance.show_crystal_3D(pos_vect=test_pos_3D,label='3D, PE = {:.6f} '.format(ma3D_instance.pot_energy_3D(test_pos_3D)),color='b')
-ma3D_instance.show_crystal_3D(pos_vect=ori_pos_3D,ax=ax,color='r',label='2D, PE = {:.6f} '.format(ma3D_instance.pot_energy_3D(ori_pos_3D)))
-print(ma3D_instance.pot_energy_3D(test_pos_3D))
-print(ma3D_instance.pot_energy_3D(ori_pos_3D))
-plt.show();exit()
-ma3D_instance.show_axial_freqs()
-ma3D_instance.show_cyc_freqs()
-ma3D_instance.show_ExB_freqs()
-plt.show()
