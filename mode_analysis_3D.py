@@ -195,6 +195,35 @@ class ModeAnalysis:
         self.Evals_3DE = self.wz * self.Evals_3D 
         # eigenvectors are dimensionless anyway
 
+    def is_trap_stable(self):
+        """
+        Checks if the trap is stable. 
+
+        Parameters:
+        -----------
+        None
+
+        Returns:
+        --------
+        stable : bool
+            True if the trap is stable, False if the trap is unstable.
+        """ 
+        stable = True
+
+        if self.wmag > self.wrot:
+            print("Warning: rotation frequency of %1.2f kHz is below magnetron frequency of %1.2f kHz" % (self.wrot/(2*pi*1e3), self.wmag/(2*pi*1e3)))
+            print('This will not provide confinement ')
+            print('beta = %1.2f' % self.beta)
+            stable = False
+
+        if self.wrot > self.wcyc - self.wmag:
+            print("Warning: rotation frequency of %1.2f kHz is too high must be less than %1.2f kHz" % (self.wrot/(2*pi*1e3), (self.wcyc - self.wmag)/(2*pi*1e3)))
+            print('This will not provide confinement ')
+            print('beta = %1.2f' % self.beta)
+            stable = False
+        
+        return stable
+
     def run(self):
         """
         Generates a crystal from the generate_crystal method (by the find_scalled_lattice_guess method,
@@ -212,25 +241,15 @@ class ModeAnalysis:
         --------
         None
         """
-        if self.wmag > self.wrot:
-            print("Warning: rotation frequency of %1.2f kHz is below magnetron frequency of %1.2f kHz" % (self.wrot/(2*pi*1e3), self.wmag/(2*pi*1e3)))
-            print('This will not provide confinement ')
-            print('beta = %1.2f' % self.beta)
-            return 0
-
-        if self.wrot > self.wcyc - self.wmag:
-            print("Warning: rotation frequency of %1.2f kHz is too high must be less than %1.2f kHz" % (self.wrot/(2*pi*1e3), (self.wcyc - self.wmag)/(2*pi*1e3)))
-            print('This will not provide confinement ')
-            print('beta = %1.2f' % self.beta)
-            return 0
-
-
         self.generate_crystal()
 
         self.axialEvals_raw, self.axialEvals, self.axialEvects = self.calc_axial_modes(self.u)
         self.planarEvals, self.planarEvects, self.V = self.calc_planar_modes(self.u)
         self.expUnits()  # make variables of outputs in experimental units
         self.hasrun = True
+
+        if not self.is_plane_stable():
+            print('Warning: 2D planar crystal is not stable')
 
     def run_3D(self):
         """
@@ -944,11 +963,15 @@ class ModeAnalysis:
         firstOrder = np.bmat([[Zn, eyeN], [np.dot(Minv,K), Zn]])
         Eval, Evect = np.linalg.eig(firstOrder)
         Eval_raw = Eval
-        # Convert 2N imaginary eigenvalues to N real eigenfrequencies
-        ind = np.argsort(np.absolute(np.imag(Eval)))
-        Eval = np.imag(Eval[ind])
-        Eval = Eval[Eval >= 0]      # toss the negative eigenvalues
-        Evect = Evect[:, ind]     # sort eigenvectors accordingly
+        # make eigenvalues real.
+        Eval = np.imag(Eval)
+        # sort eigenvalues
+        ind = np.argsort(Eval)
+        Eval = Eval[ind]
+        # toss the negative eigenvalues
+        Eval = Eval[self.Nion:]
+        # sort eigenvectors accordingly
+        Evect = Evect[:, ind] 
         # Normalize by energy of mode
         for i in range(2*self.Nion):
             pos_part = Evect[:self.Nion, i]
@@ -1320,19 +1343,21 @@ class ModeAnalysis:
 
     def is_plane_stable(self):
         """
-        Checks to see if any of the axial eigenvalues in the current configuration of the crystal
-        are equal to zero. If so, this indicates that the one-plane configuration is unstable
-        and a 1-2 plane transistion is possible.
+        Checks if the plane is stable against single to double plane transitions.
+        These occur when any of the axial modes have a frequency of zero.
+        Parameters:
+        -----------
+        None
 
-        :return: Boolean: True if no 1-2 plane transistion mode exists, false if it does
-        (Answers: "is the plane stable?")
-
+        Returns:
+        --------
+        True if the plane is stable, False if it is not. (zero frequency modes)
         """
-        if self.hasrun is False:
-            self.run()
+        if self.hasrun is False: self.run()
 
-        for x in self.axialEvals:
-            if x == 0.0:
+        axial_modes = self.axialEvals
+        for mode_freq in axial_modes:
+            if np.abs(mode_freq) < 1e-14:
                 return False
 
         return True
