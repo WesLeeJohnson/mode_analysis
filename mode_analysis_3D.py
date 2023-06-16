@@ -147,10 +147,10 @@ class ModeAnalysis:
         self.Evals_3DE = []  # Eigenvalues in experimental units
 
         self.p0 = 0    # dimensionless potential energy of equilibrium crystal
-        self.r = []
-        self.rsep = []
-        self.dx = []
-        self.dy = []
+        #self.r = []
+        #self.rsep = []
+        #self.dx = []
+        #self.dy = []
 
         self.hasrun = False
 
@@ -330,36 +330,37 @@ class ModeAnalysis:
         #Generate a lattice in dimensionless units
         self.u0_3D = self.find_scaled_lattice_guess_3D()
         self.u_3D = self.find_eq_pos_3D(self.u0_3D,self.method)
-        #self.show_crystal_3D(pos_vect=self.u_3D)
+    
         # Will attempt to nudge the crystal to a slightly lower energy state via some
         # random perturbation.
         # Only changes the positions if the perturbed potential energy was reduced.
 
         #Will perturb less for bigger crystals, as it takes longer depending on how many ions
         #there are.
+        attempts = np.linspace(.1, 1, 25)[::-1]
         if self.precision_solving is True:
             if self.quiet is False:
                 print("Perturbing crystal...")
-
+        
             if self.Nion <= 62:
-                for attempt in np.linspace(.05, .5, 50):
-                    self.u = self.perturb_position(self.u, attempt)
+                for attempt in attempts:
+                    self.u_3D = self.perturb_position_3D(self.u_3D, attempt)
             if 62 < self.Nion <= 126:
-                for attempt in np.linspace(.05, .5, 25):
-                    self.u = self.perturb_position(self.u, attempt)
+                for attempt in attempts:
+                    self.u_3D = self.perturb_position_3D(self.u_3D, attempt)
             if 127 <= self.Nion <= 200:
-                for attempt in np.linspace(.05, .5, 10):
-                    self.u = self.perturb_position(self.u, attempt)
+                for attempt in attempts:
+                    self.u_3D = self.perturb_position_3D(self.u_3D, attempt)
             if 201 <= self.Nion:
-                for attempt in np.linspace(.05, .3, 5):
-                    self.u = self.perturb_position(self.u, attempt)
+                for attempt in attempts:
+                    self.u_3D = self.perturb_position_3D(self.u_3D, attempt)
 
             if self.quiet is False:
                 pass
 
-        self.r, self.dx, self.dy, self.rsep = self.find_radial_separation(self.u)
-        self.p0 = self.pot_energy(self.u)
-        return self.u
+        #self.r, self.dx, self.dy, self.rsep = self.find_radial_separation(self.u)
+        self.p0_3D = self.pot_energy_3D(self.u_3D)
+        return self.u_3D
 
     def generate_lattice(self):
         """
@@ -1160,6 +1161,18 @@ class ModeAnalysis:
         """
         unudge = self.find_eq_pos([coord * abs(np.random.normal(1, strength)) for coord in pos_vect])
         if self.pot_energy(unudge) < self.pot_energy(pos_vect):
+            return unudge
+        else:
+            return pos_vect
+
+    def perturb_position_3D(self, pos_vect, strength=.1):
+        """
+        TODO: add docstring
+        """
+        unudge = self.find_eq_pos_3D([coord * abs(np.random.normal(1, strength)) for coord in pos_vect])
+        if self.pot_energy_3D(unudge) < self.pot_energy_3D(pos_vect):
+            print('perturbed')
+            print(self.pot_energy_3D(unudge))
             return unudge
         else:
             return pos_vect
