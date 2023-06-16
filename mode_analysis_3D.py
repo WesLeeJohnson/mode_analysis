@@ -225,10 +225,6 @@ class ModeAnalysis:
         self.axialEvals_raw, self.axialEvals, self.axialEvects = self.calc_axial_modes(self.u)
         self.planarEvals, self.planarEvects, self.V = self.calc_planar_modes(self.u)
         self.expUnits()  # make variables of outputs in experimental units
-        self.axial_hessian = -self.calc_axial_hessian(self.u)
-        self.planar_hessian= -self.V/2 
-        self.axial_Mmat    = np.diag(self.md)
-        self.planar_Mmat   = np.diag(np.tile(self.md,2))
         self.hasrun = True
 
     def run_3D(self):
@@ -252,10 +248,6 @@ class ModeAnalysis:
 
         self.Evals_3D, self.Evects_3D, self.V_3D = self.calc_modes_3D(self.u_3D)
         self.expUnits()  # make variables of outputs in experimental units
-        #self.axial_hessian = -self.calc_axial_hessian(self.u)
-        #self.planar_hessian= -self.V/2 
-        #self.axial_Mmat    = np.diag(self.md)
-        #self.planar_Mmat   = np.diag(np.tile(self.md,2))
         self.hasrun_3D = True
 
     def generate_crystal(self):
