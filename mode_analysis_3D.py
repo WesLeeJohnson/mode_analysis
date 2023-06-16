@@ -134,17 +134,18 @@ class ModeAnalysis:
         self.dimensionless()  # Make system dimensionless
         self.beta = (self.wr*self.wc - self.wr ** 2) -1/2 # dimensionless coefficient for planar confinement
 
-        self.axialEvals = []  # Axial eigenvalues
-        self.axialEvects = []  # Axial eigenvectors
-        self.planarEvals = []  # Planar eigenvalues
-        self.planarEvects = []  # Planar Eigenvectors
-        self.Evects_3D = []  # Eigenvectors
-        self.Evals_3D = []  # Eigenvalues
+        #TODO: initialize the size of the arrays based on the number of ions
+        self.axialEvals = np.array([])  # Axial eigenvalues
+        self.axialEvects = np.array([])  # Axial eigenvectors
+        self.planarEvals = np.array([])  # Planar eigenvalues
+        self.planarEvects = np.array([])  # Planar eigenvectors
+        self.Evects_3D = np.array([])  # Eigenvectors
+        self.Evals_3D = np.array([])  # Eigenvalues
 
-        self.axialEvalsE = []  # Axial eigenvalues in experimental units
-        self.planarEvalsE = []  # Planar eigenvalues in experimental units
-        self.Evects_3DE = []  # Eigenvectors in experimental units
-        self.Evals_3DE = []  # Eigenvalues in experimental units
+        self.axialEvalsE = np.array([])  # Axial eigenvalues in experimental units
+        self.planarEvalsE = np.array([])  # Planar eigenvalues in experimental units
+        self.Evects_3DE = np.array([])  # Eigenvectors in experimental units
+        self.Evals_3DE = np.array([])  # Eigenvalues in experimental units
 
         self.p0 = 0    # dimensionless potential energy of equilibrium crystal
         #self.r = []
@@ -189,9 +190,12 @@ class ModeAnalysis:
         """
         self.u0E = self.l0 * self.u0  # Seed lattice
         self.uE = self.l0 * self.u  # Equilibrium positions
+        self.u0E_3D = self.l0 * self.u0_3D  # Seed lattice
+        self.uE_3D = self.l0 * self.u_3D  # Equilibrium positions
         self.axialEvalsE_raw = self.wz * self.axialEvals_raw
         self.axialEvalsE = self.wz * self.axialEvals
         self.planarEvalsE = self.wz * self.planarEvals
+        #self.Evals_3DE = self.wz * self.Evals_3D #TODO convert the units of the eigenvalues
         # eigenvectors are dimensionless anyway
 
     def run(self):
@@ -246,13 +250,13 @@ class ModeAnalysis:
         """
         self.generate_crystal_3D()
 
-        self.axialEvals_raw, self.axialEvals, self.axialEvects = self.calc_axial_modes(self.u)
-        self.planarEvals, self.planarEvects, self.V = self.calc_planar_modes(self.u)
+        self.Evals_3D, self.Evects_3D, self.V_3D = self.calc_modes_3D(self.u_3D)
+
         self.expUnits()  # make variables of outputs in experimental units
-        self.axial_hessian = -self.calc_axial_hessian(self.u)
-        self.planar_hessian= -self.V/2 
-        self.axial_Mmat    = np.diag(self.md)
-        self.planar_Mmat   = np.diag(np.tile(self.md,2))
+        #self.axial_hessian = -self.calc_axial_hessian(self.u)
+        #self.planar_hessian= -self.V/2 
+        #self.axial_Mmat    = np.diag(self.md)
+        #self.planar_Mmat   = np.diag(np.tile(self.md,2))
         self.hasrun = True
 
     def generate_crystal(self):
@@ -1013,6 +1017,58 @@ class ModeAnalysis:
 
         # if there are extra zeros, chop them
         Eval = Eval[(Eval.size - 2 * self.Nion):]
+        return Eval, Evect, V
+
+    def calc_modes_3D(self, pos_array):
+        """Calculate Planar Mode Eigenvalues and Eigenvectors
+
+        THIS MAY NEED TO BE EDITED FOR NONHOMOGENOUS MASSES
+
+        :param pos_array: Position vector which defines the crystal
+                          to be analyzed.
+        :return: Array of eigenvalues, Array of eigenvectors
+        """
+
+        V = -self.hessian_penning_3D(pos_array)  # -Hessian
+        Zn = np.zeros((self.Nion, self.Nion)) #Nion, number of ions
+        Z2n = np.zeros((2 * self.Nion, 2 * self.Nion))
+        Z3n = np.zeros((3 * self.Nion, 3 * self.Nion))
+        offdiag = (2 * self.wr - self.wc) * np.identity(self.Nion) # np.identity: unitary matrix
+        A = np.bmat([[Zn, offdiag, Zn], [-offdiag, Zn, Zn], [Zn, Zn, Zn]])
+        Mmat = np.diag(np.concatenate((self.md,self.md))) #md =1
+        Mmat3 = np.diag(np.tile(self.md,3))
+        Minv = np.linalg.inv(Mmat)
+        Minv3 = np.linalg.inv(Mmat3)
+        #firstOrder = np.bmat([[Z2n, np.identity(2 * self.Nion)], [np.dot(Minv,V/2), A]])
+        firstOrder = np.bmat([[Z3n, np.identity(3 * self.Nion)], [np.dot(Minv3,V/2), A]])
+
+        #mp.dps = 25
+        #firstOrder = mp.matrix(firstOrder)
+        #Eval, Evect = mp.eig(firstOrder)
+        Eval, Evect = np.linalg.eig(firstOrder) 
+        # currently giving too many zero modes (increase numerical precision?)
+
+        # make eigenvalues real.
+        ind = np.argsort(np.absolute(np.imag(Eval)))
+        Eval = np.imag(Eval[ind])
+        Eval = Eval[Eval >= 0]      # toss the negative eigenvalues
+        Evect = Evect[:, ind]    # sort eigenvectors accordingly
+
+        # Normalize by energy of mode
+        for i in range(6*self.Nion):
+            pos_part = Evect[:3*self.Nion, i]
+            vel_part = Evect[3*self.Nion:, i]
+            norm = vel_part.H*Mmat3*vel_part - pos_part.H*(V/2)*pos_part
+
+            with np.errstate(divide='ignore'):
+                Evect[:, i] = np.where(np.sqrt(norm) != 0., Evect[:, i]/np.sqrt(norm), 0)
+            #Evect[:, i] = Evect[:, i]/np.sqrt(norm)
+
+        # if there are extra zeros, chop them
+        #Eval = Eval[(Eval.size - 3 * self.Nion):]
+        Eval = Eval[Eval != 0]
+        Eval = np.asarray(Eval)
+        Evect = np.asarray(Evect)
         return Eval, Evect, V
 
     def show_crystal(self, pos_vect=None,ax = None,label='Ion Positions',color='blue'):

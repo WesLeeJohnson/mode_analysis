@@ -15,11 +15,11 @@ charge = const.elementary_charge
 mass = ionmass*const.atomic_mass
 B = 4.4566 #T
 wcyc = charge*B/mass
-vwall = 20 #V 
+vwall = 10 #V 
 omega_z = 2*np.pi*1.58e6 #rad/s
 frot = wcyc/(2*np.pi*1000)/2*1.9 #kHz
 frot = 180 #kHz
-N = 250 #number of ions
+N = 7 #number of ions
 ma3D_instance = ma3D.ModeAnalysis(ionmass=ionmass
                                     ,omega_z=omega_z
                                     ,frot=frot
@@ -29,34 +29,40 @@ ma3D_instance = ma3D.ModeAnalysis(ionmass=ionmass
                                     ,precision_solving=True
                                     )
 ma3D_instance.run()
-test_pos_2D = ma3D_instance.u0
-test_pos_3D = np.concatenate((test_pos_2D,np.zeros((N,))))
-#print(ma3D_instance.pot_energy_3D(test_pos_3D)) 
-#print(ma3D_instance.pot_energy(test_pos_2D))
-#print(ma3D_instance.force_penning(test_pos_2D) - ma3D_instance.force_penning_3D(test_pos_3D)[:2*N])
-#print(ma3D_instance.hessian_penning_3D(test_pos_3D))
-#print(ma3D_instance.hessian_penning_3D(test_pos_3D)[:2*N,:2*N] - ma3D_instance.hessian_penning(test_pos_2D))
-#print(ma3D_instance.calc_axial_hessian(test_pos_2D)) #scaling is off by a factor of minus 2
-#print(ma3D_instance.hessian_penning_3D(test_pos_3D)[2*N:,2*N:]) 
-#print(test_pos_2D)
-#print(ma3D_instance.u) 
 ma3D_instance.run_3D()
-test_pos_2D = ma3D_instance.u_3D[:2*N]
+
+#compare the eigenfrequencies of the 2D and 3D crystals
+planar_freqs = ma3D_instance.planarEvalsE
+axial_freqs = ma3D_instance.axialEvalsE
+modes_2D = np.hstack((planar_freqs,axial_freqs))
+modes_3D = ma3D_instance.Evals_3DE
+fig,ax = plt.subplots(figsize=(10,10))
+modes_nums_2D = np.arange(0,len(modes_2D))
+modes_nums_3D = np.arange(0,len(modes_3D))
+modes_2D = modes_2D/2/np.pi/1e6 
+modes_3D = modes_3D/2/np.pi/1e6
+modes_2D = np.sort(modes_2D)
+modes_3D = np.sort(modes_3D)
+print(modes_2D)
+print(modes_3D)
+ax.plot(modes_nums_2D,modes_2D,'o',label='2D',color='b')
+ax.plot(modes_nums_3D,modes_3D,'o',label='3D',color='r')
+ax.set_xlabel('Mode Number')
+ax.set_ylabel('Frequency (MHz)')
+ax.legend()
+plt.show();exit()
+
+
+
+
+#compare the positions of the 2D and 3D crystals
 test_pos_3D = ma3D_instance.u_3D
 ori_pos_3D = np.concatenate((ma3D_instance.u,np.zeros((N,))))
-#ori_pos_3D[N:2*N] = -1*ori_pos_3D[N:2*N]
-#ori_pos_3D[:N] = -1*ori_pos_3D[:N]
 ax = ma3D_instance.show_crystal_3D(pos_vect=test_pos_3D,label='3D, PE = {:.6f} '.format(ma3D_instance.pot_energy_3D(test_pos_3D)),color='b')
 ma3D_instance.show_crystal_3D(pos_vect=ori_pos_3D,ax=ax,color='r',label='2D, PE = {:.6f} '.format(ma3D_instance.pot_energy_3D(ori_pos_3D)))
 print(ma3D_instance.pot_energy_3D(test_pos_3D))
 print(ma3D_instance.pot_energy_3D(ori_pos_3D))
 plt.show();exit()
-#test_pos_3D[2*N:] = 0
-#print(ma3D_instance.pot_energy_3D(test_pos_3D))
-#print(ma3D_instance.pot_energy(test_pos_2D))
-#print(ma3D_instance.force_penning(test_pos_2D) - ma3D_instance.force_penning_3D(test_pos_3D)[:2*N])
-#ma3D_instance.show_crystal_3D()
-#plotting
 ma3D_instance.show_axial_freqs()
 ma3D_instance.show_cyc_freqs()
 ma3D_instance.show_ExB_freqs()
