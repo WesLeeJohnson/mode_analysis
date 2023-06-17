@@ -143,6 +143,7 @@ class ModeAnalysis:
         self.Evals_3D = np.array([])  # Eigenvalues
 
         self.axialEvalsE = np.array([])  # Axial eigenvalues in experimental units
+        self.axialEvals_raw = np.array([])  # Axial eigenvalues without ordering
         self.planarEvalsE = np.array([])  # Planar eigenvalues in experimental units
         self.Evects_3DE = np.array([])  # Eigenvectors in experimental units
         self.Evals_3DE = np.array([])  # Eigenvalues in experimental units
