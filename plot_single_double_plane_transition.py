@@ -12,10 +12,10 @@ from scipy import constants as const
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
 
 #plotting parameters
-font_size_ticks = 16
-font_size_labels = 20
-font_size_title = 24
-font_size_legend = 20 
+font_size_ticks = 14
+font_size_labels = 18
+font_size_title = 22
+font_size_legend = 28
 font_size_annotation = 18
 point_size = 10
 
@@ -28,12 +28,10 @@ wcyc = charge*B/mass
 vwall = 5 #V 
 omega_z = 2*np.pi*1.58e6 #rad/s
 N = 61 #number of ions
-N = 5 #number of ions
-frot_min = 180 #kHz
-frot_max = 220 #kHz
+frot_min = 200 #kHz
+frot_max = 800 #kHz
 frots = np.linspace(frot_min,frot_max,5,endpoint=True)
 ma_list = []
-print('frots = ',frots)
 
 #run the 3D mode analysis
 for frot in frots:
@@ -51,6 +49,23 @@ for frot in frots:
     ma_list.append(ma3D_instance)
 
 #make a 3D plot of the results with 5 subplots
-fig = plt.figure(figsize=(10,10))
+fig = plt.figure(figsize=(16,5))
 axs = [fig.add_subplot(1,5,i+1,projection='3d') for i in range(5)]
+for i in range(5):
+    pos_vect = ma_list[i].uE_3D*1e6
+    ma_list[i].show_crystal_3D(ax=axs[i],pos_vect = pos_vect)
+    if i == 0:
+        xlims = axs[i].get_xlim()
+        ylims = axs[i].get_ylim()
+        zlims = axs[i].get_zlim()
+    else:
+        axs[i].set_xlim(xlims)
+        axs[i].set_ylim(ylims)
+        axs[i].set_zlim(zlims)
+    axs[i].set_title(str(frots[i])+' kHz',fontsize=font_size_title)
+    axs[i].set_xlabel('x ($\mu$m)',fontsize=font_size_labels)
+    axs[i].set_ylabel('y ($\mu$m)',fontsize=font_size_labels)
+    axs[i].tick_params(axis='both', which='major', labelsize=font_size_ticks)
+    axs[i].legend().remove()
+plt.tight_layout()
 plt.show();exit()
