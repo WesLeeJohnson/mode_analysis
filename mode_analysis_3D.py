@@ -1144,7 +1144,6 @@ class ModeAnalysis:
             fig = plt.figure()
             ax = fig.add_subplot(111,projection='3d')
         if pos_vect is None:
-            #pos_vect = self.uE_3D
             pos_vect = self.u0_3D
         x = pos_vect[:self.Nion]
         y = pos_vect[self.Nion:2*self.Nion]
