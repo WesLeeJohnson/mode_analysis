@@ -51,7 +51,7 @@ wcyc = charge*B/mass
 vwall = 10 #V 
 omega_z = 2*np.pi*1.58e6 #rad/s
 frot = wcyc/(2*np.pi*1000)/2*1.9 #kHz
-frot = 201 #kHz
+frot = 200.75 #kHz
 N = 61 #number of ions
 
 
