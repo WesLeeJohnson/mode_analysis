@@ -972,6 +972,36 @@ class ModeAnalysis:
         Evect = Evect[:, half_index:] 
         return Eval, Evect
 
+    def normalize_eigenvectors(self, Evects, V, M):
+        """
+        Normalizes the eigenvectors of a crystal by the energy of the mode.
+
+        Parameters:
+        -----------
+        Evects : array
+            The eigenvectors of the crystal.
+        V : array
+            The hessian matrix of the potential.
+        M : array
+            The mass matrix of the crystal.
+
+        Returns:
+        --------
+        Evects : array
+            The normalized eigenvectors of the crystal.
+        """
+        num_coords,num_eigen_values = Evects.shape 
+        # Normalize by energy of mode
+        for i in range(num_eigen_values):
+            pos_part = Evects[:int(num_coords/2), i]
+            vel_part = Evects[int(num_coords/2):, i]
+            norm = vel_part.H*M*vel_part + pos_part.H*V*pos_part
+
+            with np.errstate(divide='ignore'):
+                Evects[:, i] = np.where(np.sqrt(norm) != 0., Evects[:, i]/np.sqrt(norm), 0)
+        return Evects
+
+
     def calc_axial_modes(self, pos_array):
         """
         Calculate the modes of axial vibration for a crystal defined
@@ -1003,17 +1033,11 @@ class ModeAnalysis:
         firstOrder = np.bmat([[Zn, eyeN], [np.dot(Minv,K), Zn]])
         Eval, Evect = np.linalg.eig(firstOrder)
         Eval_raw = Eval
+
         Eval, Evect = self.sort_eigen(Eval, Evect)
-        # Normalize by energy of mode
-        for i in range(1*self.Nion):
-            pos_part = Evect[:self.Nion, i]
-            vel_part = Evect[self.Nion:, i]
-            norm = vel_part.H*Mmat*vel_part - pos_part.H*K*pos_part
 
-            with np.errstate(divide='ignore',invalid='ignore'):
-                Evect[:, i] = np.where(np.sqrt(norm) != 0., Evect[:, i]/np.sqrt(norm), 0)
+        Evect       = self.normalize_eigenvectors(Evect, -K, Mmat)
 
-        Evect = np.asarray(Evect)
         return Eval_raw, Eval, Evect
 
     def calc_planar_modes(self, pos_array):
@@ -1050,16 +1074,8 @@ class ModeAnalysis:
 
         Eval, Evect = self.sort_eigen(Eval, Evect)
 
-        # Normalize by energy of mode
-        for i in range(2*self.Nion):
-            pos_part = Evect[:2*self.Nion, i]
-            vel_part = Evect[2*self.Nion:, i]
-            norm = vel_part.H*Mmat*vel_part - pos_part.H*(V/2)*pos_part
+        Evect       = self.normalize_eigenvectors(Evect, -V/2, Mmat)
 
-            with np.errstate(divide='ignore'):
-                Evect[:, i] = np.where(np.sqrt(norm) != 0., Evect[:, i]/np.sqrt(norm), 0)
-
-        # if there are extra zeros, chop them
         return Eval, Evect, V
 
     def calc_modes_3D(self, pos_array):
@@ -1085,16 +1101,8 @@ class ModeAnalysis:
 
         Eval, Evect = self.sort_eigen(Eval, Evect)
 
-        # Normalize by energy of mode
-        for i in range(3*self.Nion):
-            pos_part = Evect[:3*self.Nion, i]
-            vel_part = Evect[3*self.Nion:, i]
-            norm = vel_part.H*Mmat3*vel_part - pos_part.H*(V/2)*pos_part
+        Evect       = self.normalize_eigenvectors(Evect, -V/2, Mmat3)
 
-            with np.errstate(divide='ignore'):
-                Evect[:, i] = np.where(np.sqrt(norm) != 0., Evect[:, i]/np.sqrt(norm), 0)
-
-        Evect = np.asarray(Evect)
         return Eval, Evect, V
 
     def show_crystal(self, pos_vect=None,ax = None,label='Ion Positions',color='blue'):
