@@ -32,7 +32,6 @@ def calculate_similarity(array1, array2):
     euclidean_distance = np.linalg.norm(array1 - array2)
 
     return mse, rmse, correlation, cosine_similarity, euclidean_distance
-plt.show()
 
 #plotting parameters
 font_size_ticks = 16
