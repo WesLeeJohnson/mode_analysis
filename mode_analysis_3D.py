@@ -971,7 +971,7 @@ class ModeAnalysis:
         Eval, Evect = np.linalg.eig(firstOrder)
         Eval_raw = Eval
         # make eigenvalues real.
-        Eval = np.imag(Eval)
+        Eval = np.absolute(np.imag(Eval))
         # sort eigenvalues
         ind = np.argsort(Eval)
         Eval = Eval[ind]
@@ -1024,7 +1024,7 @@ class ModeAnalysis:
         Eval, Evect = np.linalg.eig(firstOrder) 
 
         # make eigenvalues real.
-        Eval = np.imag(Eval)
+        Eval = np.absolute(np.imag(Eval)) 
         # sort eigenvalues
         ind = np.argsort(Eval)
         Eval = Eval[ind]
@@ -1067,7 +1067,7 @@ class ModeAnalysis:
         Eval, Evect = np.linalg.eig(firstOrder) 
 
         # make eigenvalues real.
-        Eval = np.imag(Eval)
+        Eval = np.absolute(np.imag(Eval))
         ind = np.argsort(Eval)
         Eval = Eval[ind]
         Eval = Eval[3*self.Nion:]      # toss the negative eigenvalues
@@ -1160,7 +1160,6 @@ class ModeAnalysis:
         ax.set_box_aspect([1,1,1]) # make axes equal 
         return ax
 
-
     def show_crystal_axial_modes(self, pos_vect=None, Evects=None, mode = 0, ax=None,label=None):
         """
         Plots the axial modes of the crystal, using a color map to show displacement.
@@ -1203,14 +1202,14 @@ class ModeAnalysis:
         ax.set_title('Axial Mode %d' % mode)
         return ax 
 
-    def show_crystal_planar_mode(self,mode,ax,theta=0):
+    def show_crystal_planar_mode(self,mode=0,ax=None,theta=0):
         """
         Plots the planar modes of the crystal, using arrows to show displacement.
 
         Parameters:
         -----------
         mode : int
-            The mode to plot.
+            The index of the mode to plot. Defaults to 0.
         ax : matplotlib.axes object
             The axes to plot the crystal on. If None, a new figure is created.
         theta : float
