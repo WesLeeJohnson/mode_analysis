@@ -1203,68 +1203,68 @@ class ModeAnalysis:
         ax.set_title('Axial Mode %d' % mode)
         return ax 
 
-def show_crystal_planar_mode(self,mode,ax,theta=0):
-    """
-    Plots the planar modes of the crystal, using arrows to show displacement.
+    def show_crystal_planar_mode(self,mode,ax,theta=0):
+        """
+        Plots the planar modes of the crystal, using arrows to show displacement.
 
-    Parameters:
-    -----------
-    mode : int
-        The mode to plot.
-    ax : matplotlib.axes object
-        The axes to plot the crystal on. If None, a new figure is created.
-    theta : float
-        The phase of the mode to plot.
-    
-    Returns:
-    --------
-    ax : matplotlib.axes object 
-    """
-    if ax is None:
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-    N             = self.Nion
-    posxxx        = np.append(self.uE,np.repeat([0.0],N))
-    posNx3        = posxxx.reshape((N,3),order = 'F')
-    x             = posNx3[:,0]*1e6
-    y             = posNx3[:,1]*1e6
+        Parameters:
+        -----------
+        mode : int
+            The mode to plot.
+        ax : matplotlib.axes object
+            The axes to plot the crystal on. If None, a new figure is created.
+        theta : float
+            The phase of the mode to plot.
+        
+        Returns:
+        --------
+        ax : matplotlib.axes object 
+        """
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+        N             = self.Nion
+        posxxx        = np.append(self.uE,np.repeat([0.0],N))
+        posNx3        = posxxx.reshape((N,3),order = 'F')
+        x             = posNx3[:,0]*1e6
+        y             = posNx3[:,1]*1e6
 
-    evs = self.planarEvects
-    om  = self.planarEvalsE
-    ev = -evs[:,mode*2]*np.exp(complex(0,theta))
+        evs = self.planarEvects
+        om  = self.planarEvalsE
+        ev = -evs[:,mode*2]*np.exp(complex(0,theta))
 
-    ax.scatter(x=x,y=y,color='royalblue',zorder = 3)
-    ax.set_aspect('equal', 'box')
-    ax.set_title("n = %d, "%(mode+1)+r"$\omega_n$"+"=%1.2e[Hz]" %(om[mode]))
-    lim = np.max(np.abs([x,y]))*1.25
-    ax.set_xlim(-lim,lim)
-    ax.set_ylim(-lim,lim)
-    dx  = np.real(ev)[0*N:1*N]
-    dy  = np.real(ev)[1*N:2*N]
-    dvx = np.real(ev)[2*N:3*N]
-    dvy = np.real(ev)[3*N:4*N]
-    norm = np.linalg.norm(   np.concatenate(  (dx,dy,dvx,dvy)   )  )/(2*N/2.5)
-    if norm>0:
-        dx /= norm
-        dy /= norm
-        dvx/= norm
-        dvy/= norm
-    for ion in range(N):
-        ax.arrow(x[ion],y[ion],dx[ion,0],dy[ion,0],width = 1,head_length=2,fc='black', ec='black')
-        ax.arrow(x[ion],y[ion],dvx[ion,0],dvy[ion,0],width = 1,head_length=2,fc='red', ec='red')
+        ax.scatter(x=x,y=y,color='royalblue',zorder = 3)
+        ax.set_aspect('equal', 'box')
+        ax.set_title("n = %d, "%(mode+1)+r"$\omega_n$"+"=%1.2e[Hz]" %(om[mode]))
+        lim = np.max(np.abs([x,y]))*1.25
+        ax.set_xlim(-lim,lim)
+        ax.set_ylim(-lim,lim)
+        dx  = np.real(ev)[0*N:1*N]
+        dy  = np.real(ev)[1*N:2*N]
+        dvx = np.real(ev)[2*N:3*N]
+        dvy = np.real(ev)[3*N:4*N]
+        norm = np.linalg.norm(   np.concatenate(  (dx,dy,dvx,dvy)   )  )/(2*N/2.5)
+        if norm>0:
+            dx /= norm
+            dy /= norm
+            dvx/= norm
+            dvy/= norm
+        for ion in range(N):
+            ax.arrow(x[ion],y[ion],dx[ion,0],dy[ion,0],width = 1,head_length=2,fc='black', ec='black')
+            ax.arrow(x[ion],y[ion],dvx[ion,0],dvy[ion,0],width = 1,head_length=2,fc='red', ec='red')
 
-    fig.set_size_inches(8, 8)
-    leg = fig.legend([r'$\mathbf{\delta x}$'
-                        ,r'$\mathbf{\delta v}$'
-                        ,r'$\mathbf{X_0}$']
-                        ,labelcolor = ['black','red','royalblue'],
-                     loc = 'upper left')
-    leg.legendHandles[0].set_color('black')
-    leg.legendHandles[1].set_color('red')
-    leg.legendHandles[2].set_color('royalblue')
-    ax.set_xlabel(r"x [$\mu$m]")
-    ax.set_ylabel(r"y [$\mu$m]")
-    return ax
+        fig.set_size_inches(8, 8)
+        leg = fig.legend([r'$\mathbf{\delta x}$'
+                            ,r'$\mathbf{\delta v}$'
+                            ,r'$\mathbf{X_0}$']
+                            ,labelcolor = ['black','red','royalblue'],
+                         loc = 'upper left')
+        leg.legendHandles[0].set_color('black')
+        leg.legendHandles[1].set_color('red')
+        leg.legendHandles[2].set_color('royalblue')
+        ax.set_xlabel(r"x [$\mu$m]")
+        ax.set_ylabel(r"y [$\mu$m]")
+        return ax
 
 
     def perturb_position(self, pos_vect, strength=.1):
