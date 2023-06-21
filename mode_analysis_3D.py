@@ -1248,8 +1248,6 @@ class ModeAnalysis:
         if ax is None:
             fig = plt.figure()
             ax = fig.add_subplot(111)
-        else: 
-            fig = ax.get_figure()
         N             = self.Nion
         posxxx        = np.append(self.uE,np.repeat([0.0],N))
         posNx3        = posxxx.reshape((N,3),order = 'F')
@@ -1277,11 +1275,10 @@ class ModeAnalysis:
             dvx/= norm
             dvy/= norm
         for ion in range(N):
-            ax.arrow(x[ion],y[ion],dx[ion,0],dy[ion,0],width = 1,head_length=2,fc='black', ec='black')
-            ax.arrow(x[ion],y[ion],dvx[ion,0],dvy[ion,0],width = 1,head_length=2,fc='red', ec='red')
+            ax.arrow(x[ion],y[ion],dx[ion],dy[ion],width = 1,head_length=2,fc='black', ec='black')
+            ax.arrow(x[ion],y[ion],dvx[ion],dvy[ion],width = 1,head_length=2,fc='red', ec='red')
 
-        fig.set_size_inches(8, 8)
-        leg = fig.legend([r'$\mathbf{\delta x}$'
+        leg = ax.legend([r'$\mathbf{\delta x}$'
                             ,r'$\mathbf{\delta v}$'
                             ,r'$\mathbf{X_0}$']
                             ,labelcolor = ['black','red','royalblue'],
@@ -1289,8 +1286,8 @@ class ModeAnalysis:
         leg.legendHandles[0].set_color('black')
         leg.legendHandles[1].set_color('red')
         leg.legendHandles[2].set_color('royalblue')
-        ax.set_xlabel(r"x [$\mu$m]")
-        ax.set_ylabel(r"y [$\mu$m]")
+        ax.set_xlabel(r"x ($\mu$m)")
+        ax.set_ylabel(r"y ($\mu$m)")
         return ax
 
 
