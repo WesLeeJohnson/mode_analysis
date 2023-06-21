@@ -1038,6 +1038,8 @@ class ModeAnalysis:
 
         Evect       = self.normalize_eigenvectors(Evect, -K, Mmat)
 
+        Evect = np.asarray(Evect)
+        Eval  = np.asarray(Eval)
         return Eval_raw, Eval, Evect
 
     def calc_planar_modes(self, pos_array):
@@ -1076,6 +1078,8 @@ class ModeAnalysis:
 
         Evect       = self.normalize_eigenvectors(Evect, -V/2, Mmat)
 
+        Evect = np.asarray(Evect)
+        Eval  = np.asarray(Eval)
         return Eval, Evect, V
 
     def calc_modes_3D(self, pos_array):
@@ -1103,6 +1107,8 @@ class ModeAnalysis:
 
         Evect       = self.normalize_eigenvectors(Evect, -V/2, Mmat3)
 
+        Evect = np.asarray(Evect)
+        Eval  = np.asarray(Eval)
         return Eval, Evect, V
 
     def show_crystal(self, pos_vect=None,ax = None,label='Ion Positions',color='blue'):
@@ -1180,7 +1186,7 @@ class ModeAnalysis:
         ax.set_box_aspect([1,1,1]) # make axes equal 
         return ax
 
-    def show_crystal_axial_modes(self, pos_vect=None, Evects=None, mode = 0, ax=None,label=None):
+    def show_crystal_axial_mode(self, pos_vect=None, Evects=None, mode = 0, ax=None,label=None):
         """
         Plots the axial modes of the crystal, using a color map to show displacement.
 
@@ -1207,13 +1213,13 @@ class ModeAnalysis:
         if pos_vect is None:
             pos_vect = self.uE
         if Evects is None:
-            Evect = self.axialEvects[:, 2*mode]
+            Evect = self.axialEvects[:, mode]
         x = pos_vect[:self.Nion]
         y = pos_vect[self.Nion:]
         x = x*1e6
         y = y*1e6
         z = np.real(Evect)[:self.Nion]
-        clim = np.max(np.abs(Evect))
+        clim = np.max(np.abs(z))
         cmap = plt.get_cmap('seismic')
         ax.scatter(x,y,c=z,cmap=cmap,vmin=-clim,vmax=clim)
         ax.set_xlabel('x ($\mu$m)')
@@ -1242,6 +1248,8 @@ class ModeAnalysis:
         if ax is None:
             fig = plt.figure()
             ax = fig.add_subplot(111)
+        else: 
+            fig = ax.get_figure()
         N             = self.Nion
         posxxx        = np.append(self.uE,np.repeat([0.0],N))
         posNx3        = posxxx.reshape((N,3),order = 'F')
@@ -1250,7 +1258,7 @@ class ModeAnalysis:
 
         evs = self.planarEvects
         om  = self.planarEvalsE
-        ev = -evs[:,mode*2]*np.exp(complex(0,theta))
+        ev = -evs[:,mode]*np.exp(complex(0,theta))
 
         ax.scatter(x=x,y=y,color='royalblue',zorder = 3)
         ax.set_aspect('equal', 'box')
