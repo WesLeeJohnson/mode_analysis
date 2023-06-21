@@ -1264,6 +1264,7 @@ def show_crystal_planar_mode(self,mode,ax,theta=0):
     leg.legendHandles[2].set_color('royalblue')
     ax.set_xlabel(r"x [$\mu$m]")
     ax.set_ylabel(r"y [$\mu$m]")
+    return ax
 
 
     def perturb_position(self, pos_vect, strength=.1):
