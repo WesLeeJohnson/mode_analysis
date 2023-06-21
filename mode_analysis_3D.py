@@ -939,6 +939,39 @@ class ModeAnalysis:
         K -= 0.5 * rsep3
         return K 
 
+    def sort_eigen(self, Eval, Evect):
+        """
+        Sorts the eigenvalues and eigenvectors of a crystal. The ion eigenvalues come in pairs, 
+        one positive and one negative. This function sorts the eigenvalues and eigenvectors
+        so that the negative eigenvalues are tossed and the eigenvectors are sorted accordingly.
+
+        Parameters:
+        -----------
+        Eval : array
+            The eigenvalues of the crystal, unsorted. 
+        Evect : array
+            The eigenvectors of the crystal, unsorted.
+
+        Returns:
+        --------
+        Eval : array
+            The sorted eigenvalues of the crystal. Contains only real values.
+        Evect : array
+            The sorted eigenvectors of the crystal.
+        """
+        # make eigenvalues real.
+        Eval = np.imag(Eval) 
+        half_index = int(len(Eval)/2)
+        # sort eigenvalues
+        ind = np.argsort(Eval)
+        # eigenvalues come in positive and negative pairs
+        # negative ones are in the first half of the array
+        Eval = Eval[ind]
+        Evect = Evect[:, ind]    # sort eigenvectors accordingly
+        Eval = Eval[half_index:] # toss the negative eigenvalues
+        Evect = Evect[:, half_index:] 
+        return Eval, Evect
+
     def calc_axial_modes(self, pos_array):
         """
         Calculate the modes of axial vibration for a crystal defined
@@ -970,17 +1003,9 @@ class ModeAnalysis:
         firstOrder = np.bmat([[Zn, eyeN], [np.dot(Minv,K), Zn]])
         Eval, Evect = np.linalg.eig(firstOrder)
         Eval_raw = Eval
-        # make eigenvalues real.
-        Eval = np.absolute(np.imag(Eval))
-        # sort eigenvalues
-        ind = np.argsort(Eval)
-        Eval = Eval[ind]
-        # toss the negative eigenvalues
-        Eval = Eval[self.Nion:]
-        # sort eigenvectors accordingly
-        Evect = Evect[:, ind] 
+        Eval, Evect = self.sort_eigen(Eval, Evect)
         # Normalize by energy of mode
-        for i in range(2*self.Nion):
+        for i in range(1*self.Nion):
             pos_part = Evect[:self.Nion, i]
             vel_part = Evect[self.Nion:, i]
             norm = vel_part.H*Mmat*vel_part - pos_part.H*K*pos_part
@@ -1023,17 +1048,10 @@ class ModeAnalysis:
 
         Eval, Evect = np.linalg.eig(firstOrder) 
 
-        # make eigenvalues real.
-        Eval = np.absolute(np.imag(Eval)) 
-        # sort eigenvalues
-        ind = np.argsort(Eval)
-        Eval = Eval[ind]
-        # toss the negative eigenvalues
-        Eval = Eval[2*self.Nion:]
-        Evect = Evect[:, ind]    # sort eigenvectors accordingly
+        Eval, Evect = self.sort_eigen(Eval, Evect)
 
         # Normalize by energy of mode
-        for i in range(4*self.Nion):
+        for i in range(2*self.Nion):
             pos_part = Evect[:2*self.Nion, i]
             vel_part = Evect[2*self.Nion:, i]
             norm = vel_part.H*Mmat*vel_part - pos_part.H*(V/2)*pos_part
@@ -1042,7 +1060,6 @@ class ModeAnalysis:
                 Evect[:, i] = np.where(np.sqrt(norm) != 0., Evect[:, i]/np.sqrt(norm), 0)
 
         # if there are extra zeros, chop them
-        Eval = Eval[(Eval.size - 2 * self.Nion):]
         return Eval, Evect, V
 
     def calc_modes_3D(self, pos_array):
@@ -1066,15 +1083,10 @@ class ModeAnalysis:
 
         Eval, Evect = np.linalg.eig(firstOrder) 
 
-        # make eigenvalues real.
-        Eval = np.absolute(np.imag(Eval))
-        ind = np.argsort(Eval)
-        Eval = Eval[ind]
-        Eval = Eval[3*self.Nion:]      # toss the negative eigenvalues
-        Evect = Evect[:, ind]    # sort eigenvectors accordingly
+        Eval, Evect = self.sort_eigen(Eval, Evect)
 
         # Normalize by energy of mode
-        for i in range(6*self.Nion):
+        for i in range(3*self.Nion):
             pos_part = Evect[:3*self.Nion, i]
             vel_part = Evect[3*self.Nion:, i]
             norm = vel_part.H*Mmat3*vel_part - pos_part.H*(V/2)*pos_part
