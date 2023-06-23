@@ -1222,7 +1222,7 @@ class ModeAnalysis:
         clim = np.max(np.abs(z))
         lim = np.max(np.abs([x,y]))*1.25
         cmap = plt.get_cmap('seismic')
-        ax.scatter(x,y,c=z,cmap=cmap,vmin=-clim,vmax=clim,edgecolors='black')
+        ax.scatter(x,y,c=z,cmap=cmap,vmin=-clim,vmax=clim,edgecolors='black',linewidths=0.5,s=50)
         ax.set_xlabel('x ($\mu$m)')
         ax.set_ylabel('y ($\mu$m)')
         ax.set_xlim(-lim,lim)
