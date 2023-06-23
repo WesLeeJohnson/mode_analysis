@@ -995,9 +995,10 @@ class ModeAnalysis:
             pos_part = Evects[:int(num_coords/2), i]
             vel_part = Evects[int(num_coords/2):, i]
             norm = vel_part.H*M*vel_part + pos_part.H*V*pos_part
+            norm = np.sqrt(norm)
 
             with np.errstate(divide='ignore'):
-                Evects[:, i] = np.where(np.sqrt(norm) != 0., Evects[:, i]/np.sqrt(norm), 0)
+                Evects[:, i] = np.where(norm != 0., Evects[:, i]/norm, 0)
         return Evects
 
 
