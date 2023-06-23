@@ -1185,7 +1185,7 @@ class ModeAnalysis:
         ax.set_box_aspect([1,1,1]) # make axes equal 
         return ax
 
-    def show_crystal_axial_mode(self, pos_vect=None, Evects=None, mode = 0, ax=None,label=None):
+    def show_crystal_axial_mode(self, pos_vect=None, Evects=None, mode = 0, ax=None):
         """
         Plots the axial modes of the crystal, using a color map to show displacement.
 
@@ -1212,22 +1212,26 @@ class ModeAnalysis:
         if pos_vect is None:
             pos_vect = self.uE
         if Evects is None:
-            Evect = self.axialEvects[:, mode]
+            Evects = self.axialEvects
+        Evect = Evects[:,mode]
         x = pos_vect[:self.Nion]
         y = pos_vect[self.Nion:]
         x = x*1e6
         y = y*1e6
         z = np.real(Evect)[:self.Nion]
         clim = np.max(np.abs(z))
+        lim = np.max(np.abs([x,y]))*1.25
         cmap = plt.get_cmap('seismic')
         ax.scatter(x,y,c=z,cmap=cmap,vmin=-clim,vmax=clim)
         ax.set_xlabel('x ($\mu$m)')
         ax.set_ylabel('y ($\mu$m)')
+        ax.set_xlim(-lim,lim)
+        ax.set_ylim(-lim,lim)
         ax.set_aspect('equal')
         ax.set_title('Axial Mode %d' % mode)
         return ax 
 
-    def show_crystal_planar_mode(self,mode=0,ax=None,theta=0):
+    def show_crystal_planar_mode(self,pos_vect=None, Evects=None, mode = 0, theta = 0, ax=None):
         """
         Plots the planar modes of the crystal, using arrows to show displacement.
 
@@ -1244,22 +1248,25 @@ class ModeAnalysis:
         --------
         ax : matplotlib.axes object 
         """
+        if pos_vect is None:
+            pos_vect = self.uE
+        if Evects is None:
+            Evects = self.planarEvects
         if ax is None:
             fig = plt.figure()
             ax = fig.add_subplot(111)
+
         N             = self.Nion
         posxxx        = np.append(self.uE,np.repeat([0.0],N))
         posNx3        = posxxx.reshape((N,3),order = 'F')
         x             = posNx3[:,0]*1e6
         y             = posNx3[:,1]*1e6
 
-        evs = self.planarEvects
-        om  = self.planarEvalsE
-        ev = -evs[:,mode]*np.exp(complex(0,theta))
+        ev = -Evects[:,mode]*np.exp(complex(0,theta))
 
         ax.scatter(x=x,y=y,color='royalblue',zorder = 3)
         ax.set_aspect('equal', 'box')
-        ax.set_title("n = %d, "%(mode+1)+r"$\omega_n$"+"=%1.2e[Hz]" %(om[mode]))
+        ax.set_title("n = %d "%(mode)) 
         lim = np.max(np.abs([x,y]))*1.25
         ax.set_xlim(-lim,lim)
         ax.set_ylim(-lim,lim)
