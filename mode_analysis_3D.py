@@ -1258,10 +1258,9 @@ class ModeAnalysis:
             ax = fig.add_subplot(111)
 
         N             = self.Nion
-        posxxx        = np.append(self.uE,np.repeat([0.0],N))
-        posNx3        = posxxx.reshape((N,3),order = 'F')
-        x             = posNx3[:,0]*1e6
-        y             = posNx3[:,1]*1e6
+
+        x             = pos_vect[0*N:1*N]*1e6
+        y             = pos_vect[1*N:2*N]*1e6
 
         ev = -Evects[:,mode]*np.exp(complex(0,theta))
 
