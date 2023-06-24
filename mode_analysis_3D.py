@@ -1266,7 +1266,7 @@ class ModeAnalysis:
 
         ax.scatter(x=x,y=y,color='royalblue',zorder = 3)
         ax.set_aspect('equal', 'box')
-        ax.set_title("n = %d "%(mode)) 
+        ax.set_title("Planar Mode %d" % mode)
         lim = np.max(np.abs([x,y]))*1.25
         ax.set_xlim(-lim,lim)
         ax.set_ylim(-lim,lim)
