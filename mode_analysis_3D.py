@@ -210,8 +210,8 @@ class ModeAnalysis:
         """ 
         stable = True 
 
-        if self.wcyc**2 < 2*self.wz**2:
-            print('Warning: cyclotron frequency of %1.2f MHz is below two times the axial frequency of %1.2f MHz' % (self.wcyc/(2*pi*1e6), self.wz/(pi*1e6)))
+        if self.wcyc < np.sqrt(2)*self.wz:
+            print('Warning: cyclotron frequency of %1.2f MHz is below sqrt two times the axial frequency of %1.2f MHz' % (self.wcyc/(2*pi*1e6), np.sqrt(2)*self.wz/(2* pi*1e6)))
             stable = False
         
         if self.beta < 0: 
