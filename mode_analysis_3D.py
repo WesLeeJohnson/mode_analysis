@@ -569,9 +569,9 @@ class ModeAnalysis:
         with np.errstate(divide='ignore'):
             Vc = np.where(rsep != 0., 1 / rsep, 0)
 
-        V = np.sum(self.md * self.beta * (x ** 2 + y ** 2)) \
-            + np.sum(self.md * self.delta * (x ** 2 - y ** 2)) \
-                + 0.5 * np.sum(Vc) + np.sum(self.md * z ** 2)
+        V = (self.beta + self.delta) * np.sum(self.md * x ** 2) \
+            + (self.beta - self.delta) * np.sum(self.md * y ** 2) \
+                + np.sum(self.md * z ** 2) + 0.5 * np.sum(Vc)   
 
         return V
          
@@ -621,9 +621,10 @@ class ModeAnalysis:
 
     def force_penning_3D(self, pos_array):
         """
-        Computes the net forces acting on each ion in the crystal;
+        Computes the negative of the net forces acting on each ion in the crystal;
         used as the jacobian by find_eq_pos to minimize the potential energy
         of a crystal configuration.
+        Note: the negative is taken because the scipy.optimize.minimize function
 
         Parameters:
         -----------
@@ -647,17 +648,15 @@ class ModeAnalysis:
         dz = z.reshape((z.size, 1)) - z
         rsep = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
 
-        # Calculate coulomb force on each ion
-        with np.errstate(divide='ignore'):
-            Fc = np.where(rsep != 0., rsep ** (-2), 0)
-
         with np.errstate(divide='ignore', invalid='ignore'):
-            fx = np.where(rsep != 0., np.float64((dx / rsep) * Fc), 0)
-            fy = np.where(rsep != 0., np.float64((dy / rsep) * Fc), 0)
-            fz = np.where(rsep != 0., np.float64((dz / rsep) * Fc), 0)
+            rsep3 = np.where(rsep != 0., rsep ** (-3), 0)
+        
+        fx = np.where(rsep != 0., np.float64((dx * rsep3)), 0)
+        fy = np.where(rsep != 0., np.float64((dy * rsep3)), 0)
+        fz = np.where(rsep != 0., np.float64((dz * rsep3)), 0)
 
-        Ftrapx = -2 * self.md * ( - self.beta - self.delta) * x
-        Ftrapy = -2 * self.md * ( - self.beta + self.delta) * y
+        Ftrapx = 2 * self.md * (self.beta + self.delta) * x
+        Ftrapy = 2 * self.md * (self.beta - self.delta) * y
         Ftrapz = 2 * self.md * z
 
         Fx = -np.sum(fx, axis=1) + Ftrapx
