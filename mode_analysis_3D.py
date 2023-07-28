@@ -655,7 +655,6 @@ class ModeAnalysis:
         fy = np.float64((dy * rsep3))
         fz = np.float64((dz * rsep3))
 
-
         Ftrapx = 2 * self.md * (self.beta + self.delta) * x
         Ftrapy = 2 * self.md * (self.beta - self.delta) * y
         Ftrapz = 2 * self.md * z
