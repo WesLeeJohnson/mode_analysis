@@ -130,27 +130,27 @@ plt.show()
 
 
 
-#compare the eigenfrequencies of the 2D and 3D crystals
-fig,ax = plt.subplots(figsize=(10,10))
-modes_nums_2D = np.arange(0,len(modes_2D))
-modes_nums_3D = np.arange(0,len(modes_3D))
-assert len(modes_2D) == len(modes_3D), 'The number of modes in the 2D and 3D crystals are not the same'
-ax.plot(modes_nums_3D,modes_3D,'o',label='3D',color='r',markersize=point_size)
-ax.plot(modes_nums_2D,modes_2D,'x',label='2D',color='b',markersize=point_size)
-ax.set_xlabel('Mode Number',fontsize=font_size_labels)
-ax.set_ylabel('Frequency (MHz)',fontsize=font_size_labels)
-ax.legend(fontsize=font_size_legend)
-ax.set_title('2D and 3D Mode Calculation, $f_r$ = {:.2f} kHz'.format(frot)
-             ,fontsize=font_size_title)
-ax.axes.tick_params(labelsize=font_size_ticks)
-mse, rmse, correlation, cosine_similarity, euclidean_distance = calculate_similarity(modes_2D,modes_3D)
-ax.annotate('MSE = {:.2f}'.format(mse)+
-            '\nCorrelation = {:.2f}'.format(correlation)+\
-                '\nCosine Similarity = {:.2f}'.format(cosine_similarity)+\
-                    '\nEuclidean Distance = {:.2f}'.format(euclidean_distance)
-                    ,xy=(0.05,0.5),xycoords='axes fraction',fontsize=font_size_annotation
-            )
-plt.show();exit()
+##compare the eigenfrequencies of the 2D and 3D crystals
+#fig,ax = plt.subplots(figsize=(10,10))
+#modes_nums_2D = np.arange(0,len(modes_2D))
+#modes_nums_3D = np.arange(0,len(modes_3D))
+#assert len(modes_2D) == len(modes_3D), 'The number of modes in the 2D and 3D crystals are not the same'
+#ax.plot(modes_nums_3D,modes_3D,'o',label='3D',color='r',markersize=point_size)
+#ax.plot(modes_nums_2D,modes_2D,'x',label='2D',color='b',markersize=point_size)
+#ax.set_xlabel('Mode Number',fontsize=font_size_labels)
+#ax.set_ylabel('Frequency (MHz)',fontsize=font_size_labels)
+#ax.legend(fontsize=font_size_legend)
+#ax.set_title('2D and 3D Mode Calculation, $f_r$ = {:.2f} kHz'.format(frot)
+#             ,fontsize=font_size_title)
+#ax.axes.tick_params(labelsize=font_size_ticks)
+#mse, rmse, correlation, cosine_similarity, euclidean_distance = calculate_similarity(modes_2D,modes_3D)
+#ax.annotate('MSE = {:.2f}'.format(mse)+
+#            '\nCorrelation = {:.2f}'.format(correlation)+\
+#                '\nCosine Similarity = {:.2f}'.format(cosine_similarity)+\
+#                    '\nEuclidean Distance = {:.2f}'.format(euclidean_distance)
+#                    ,xy=(0.05,0.5),xycoords='axes fraction',fontsize=font_size_annotation
+#            )
+#plt.show();exit()
 
 
 
