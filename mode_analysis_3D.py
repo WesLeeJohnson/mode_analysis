@@ -646,7 +646,7 @@ class ModeAnalysis:
         dx = x.reshape((x.size, 1)) - x
         dy = y.reshape((y.size, 1)) - y
         dz = z.reshape((z.size, 1)) - z
-        rsep = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
+        rsep = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2).astype(np.float64)  
 
         with np.errstate(divide='ignore', invalid='ignore'):
             rsep3 = np.where(rsep != 0., rsep ** (-3), 0)
