@@ -651,9 +651,9 @@ class ModeAnalysis:
         with np.errstate(divide='ignore', invalid='ignore'):
             rsep3 = np.where(rsep != 0., rsep ** (-3), 0)
         
-        fx = np.float64((dx * rsep3))
-        fy = np.float64((dy * rsep3))
-        fz = np.float64((dz * rsep3))
+        fx = dx * rsep3
+        fy = dy * rsep3
+        fz = dz * rsep3
 
         Ftrapx = 2 * self.md * (self.beta + self.delta) * x
         Ftrapy = 2 * self.md * (self.beta - self.delta) * y
