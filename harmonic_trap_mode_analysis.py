@@ -218,12 +218,14 @@ class HarmonicTrapModeAnalysis:
        return evals, evecs
 
     def normalize_evecs(self,evecs,E_matrix):
-       # vectors are orthogonal with respect to Hamiltonian matrix
-       for i in range(evecs.shape[1]):
+        # vectors are orthogonal with respect to Hamiltonian matrix
+        _, modes = np.shape(evecs)
+        for i in range(modes): 
            vec = evecs[:,i]
-           norm = np.sqrt(vec @ E_matrix @ vec)
+           norm = np.sqrt(vec.T.conj() @ E_matrix @ vec)
            evecs[:,i] = vec / norm
-           return evecs
+        return evecs
+
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
@@ -255,21 +257,24 @@ if __name__ == "__main__":
     plt.rcParams.update({'savefig.format': 'pdf'})
     plt.rcParams.update({'savefig.bbox': 'tight'})
 
-    htma_obj = HarmonicTrapModeAnalysis(N=6,wz=2*np.pi*.1e6,wy=2*np.pi*2.1e6,wx=2*np.pi*2.5e6)  
+    htma_obj = HarmonicTrapModeAnalysis(N=6,wz=2*np.pi*.3e6,wy=2*np.pi*2.1e6,wx=2*np.pi*2.5e6)  
     #htma_obj.initial_equilibrium_guess = np.random.rand(3*htma_obj.N) - 0.5
     htma_obj.run()
     # check eigen vectors are orthogonal and normalized wrt Hamiltonian matrix
     np.printoptions(precision=2)
     np.printoptions(suppress=True)
-    check_matrix = np.empty((3*htma_obj.N, 3*htma_obj.N))
-    for i in range(3*htma_obj.N):
-        for j in range(3*htma_obj.N):
-            check_matrix[i,j] = htma_obj.evecs[:,i].T @ htma_obj.E_matrix @ htma_obj.evecs[:,j]
+    def check_normalization(): 
+        evecs_all = np.empty((6*htma_obj.N, 6*htma_obj.N), dtype=np.complex128)
+        check_matrix = np.zeros((6*htma_obj.N, 6*htma_obj.N), dtype=np.complex128)
+        evecs_all[:,0:3*htma_obj.N] = htma_obj.evecs
+        evecs_all[:,3*htma_obj.N:] = np.conj(htma_obj.evecs)
+        for i in range(6*htma_obj.N):
+            for j in range(6*htma_obj.N):
+                element = evecs_all[:,i].T.conj() @ htma_obj.E_matrix @ evecs_all[:,j]
+                assert np.abs(element) < 1e2, f"Element {i},{j} is not zero: {element}"
+                check_matrix[i,j] = element
+        assert np.allclose(np.eye(6*htma_obj.N), check_matrix, atol=1e-2), "Eigenvectors are not orthogonal"
 
-    check_matrix = np.real(check_matrix)
-    check_matrix = np.round(check_matrix, 2)
-    print(check_matrix)
-    print(np.shape(check_matrix))
     print(htma_obj.u0)
     print(htma_obj.u)
     print(htma_obj.pot_energy(htma_obj.u))
@@ -295,6 +300,7 @@ if __name__ == "__main__":
     ax.scatter(center_of_mass_mode_indices, htma_obj.evals[center_of_mass_mode_indices] * htma_obj.wz_E / 2 / np.pi * 1e-6, marker='*', color='r')
     ax.set_xlabel('Mode number')
     ax.set_ylabel('Frequency (MHz)')    
+    ax.set_ylim(0, htma_obj.wx_E / 2 / np.pi * 1e-6 * 1.1)
 
     ax = axs[1] 
     ax.set_title("Equilibrium positions")
