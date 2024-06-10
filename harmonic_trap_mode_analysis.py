@@ -261,8 +261,6 @@ if __name__ == "__main__":
     #htma_obj.initial_equilibrium_guess = np.random.rand(3*htma_obj.N) - 0.5
     htma_obj.run()
     # check eigen vectors are orthogonal and normalized wrt Hamiltonian matrix
-    np.printoptions(precision=2)
-    np.printoptions(suppress=True)
     def check_normalization(): 
         evecs_all = np.empty((6*htma_obj.N, 6*htma_obj.N), dtype=np.complex128)
         check_matrix = np.zeros((6*htma_obj.N, 6*htma_obj.N), dtype=np.complex128)
@@ -274,11 +272,6 @@ if __name__ == "__main__":
                 assert np.abs(element) < 1e2, f"Element {i},{j} is not zero: {element}"
                 check_matrix[i,j] = element
         assert np.allclose(np.eye(6*htma_obj.N), check_matrix, atol=1e-2), "Eigenvectors are not orthogonal"
-
-    print(htma_obj.u0)
-    print(htma_obj.u)
-    print(htma_obj.pot_energy(htma_obj.u))
-    print(htma_obj.force(htma_obj.u))
 
     def find_center_of_mass_modes(evecs):
         # center of mass modes have equal amplitudes for all ions
@@ -306,7 +299,6 @@ if __name__ == "__main__":
     ax.set_title("Equilibrium positions")
     eq_pos_3D = htma_obj.u.reshape((3, htma_obj.N))
     eq_pos_3D *= htma_obj.l0 * 1e6  
-    print(htma_obj.l0)
     y = eq_pos_3D[1] 
     z = eq_pos_3D[2] 
     ax.scatter(z, y)    
