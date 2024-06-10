@@ -32,19 +32,22 @@ class HarmonicTrapModeAnalysis:
         self.wy = self.wz * (self.wy_E / self.wz_E) 
         self.wx = self.wz * (self.wx_E / self.wz_E)
         k_e = 1 / (4 * np.pi * const.epsilon_0)  # Coulomb constant
-        self.l0 = ((k_e * self.q_E ** 2) / (.5 * self.m_E * self.wz ** 2)) ** (1 / 3)
-        self.t0 = 1 / self.wx  # characteristic time
+        self.l0 = ((k_e * self.q_E ** 2) / (.5 * self.m_E * self.wz_E ** 2)) ** (1 / 3)
+        self.t0 = 1 / self.wz  # characteristic time
         self.v0 = self.l0 / self.t0  # characteristic velocity
-        self.E0 = 0.5*self.m*(self.wx**2)*self.l0**2 # characteristic energy
+        self.E0 = 0.5*self.m*(self.wz**2)*self.l0**2 # characteristic energy
 
 
     def dimensionful_parameters(self):
         pass
 
     def is_trap_stable(self):
-        print(self.wx, self.wy, self.wz)
         assert self.wx > 0e0 and self.wy > 0e0 and self.wz > 0e0, "Trap frequencies must be positive"
         assert self.wx > self.wy and self.wy and self.wz, "Trap frequencies must be ordered wx > wy > wz"
+
+    def check_for_zero_modes(self):
+        # check mode frequencies are non-zero
+        assert np.all(np.abs(self.evals) > 1e-10), "Zero frequency mode, ion crystal is not stable."
 
     def run(self):
         
@@ -54,6 +57,7 @@ class HarmonicTrapModeAnalysis:
 
         self.calculate_equilibrium_positions()
         self.evals, self.evecs, self.E_matrix = self.calculate_normal_modes()
+        self.check_for_zero_modes() 
         self.hasrun = True
 
     def calculate_equilibrium_positions(self):
@@ -85,7 +89,6 @@ class HarmonicTrapModeAnalysis:
         # vector of equilibrium positions organized as [x1, x2, x3, ..., xn, y1, y2, y3, ..., yn, z1, z2, z3, ..., zn]
         self.u0 = np.zeros(3*self.N)
         self.u0[2*self.N:] = np.linspace(-self.l0*(self.N-1)/2, self.l0*(self.N-1)/2, self.N, endpoint=True)
-        print(self.l0 )
         return self.u0
         
     def find_equilibrium_positions(self, u0):
@@ -223,7 +226,36 @@ class HarmonicTrapModeAnalysis:
            return evecs
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    htma_obj = HarmonicTrapModeAnalysis(N=2)    
+
+
+    # format matplotlib 
+    plt.rcParams.update({'font.size': 16})
+    plt.rcParams.update({'figure.figsize': [8, 6]})
+    plt.rcParams.update({'axes.grid': True})
+    plt.rcParams.update({'grid.alpha': 0.5})
+    plt.rcParams.update({'grid.linestyle': '-'})
+    plt.rcParams.update({'grid.linewidth': 0.5})
+    plt.rcParams.update({'grid.color': 'k'})
+    plt.rcParams.update({'legend.fontsize': 14})
+    plt.rcParams.update({'legend.frameon': True})
+    plt.rcParams.update({'legend.framealpha': 1})
+    plt.rcParams.update({'legend.facecolor': 'w'})
+    plt.rcParams.update({'legend.edgecolor': 'k'})
+    plt.rcParams.update({'legend.shadow': False})
+    plt.rcParams.update({'legend.fancybox': True})
+    plt.rcParams.update({'lines.linewidth': 2})
+    plt.rcParams.update({'lines.markersize': 8})
+    plt.rcParams.update({'xtick.labelsize': 14})
+    plt.rcParams.update({'ytick.labelsize': 14})
+    plt.rcParams.update({'axes.labelsize': 16})
+    plt.rcParams.update({'axes.titlesize': 18})
+    plt.rcParams.update({'figure.titlesize': 20})
+    plt.rcParams.update({'figure.dpi': 200})
+    plt.rcParams.update({'savefig.dpi': 200})
+    plt.rcParams.update({'savefig.format': 'pdf'})
+    plt.rcParams.update({'savefig.bbox': 'tight'})
+
+    htma_obj = HarmonicTrapModeAnalysis(N=6,wz=2*np.pi*.1e6,wy=2*np.pi*2.1e6,wx=2*np.pi*2.5e6)  
     #htma_obj.initial_equilibrium_guess = np.random.rand(3*htma_obj.N) - 0.5
     htma_obj.run()
     # check eigen vectors are orthogonal and normalized wrt Hamiltonian matrix
@@ -242,16 +274,41 @@ if __name__ == "__main__":
     print(htma_obj.u)
     print(htma_obj.pot_energy(htma_obj.u))
     print(htma_obj.force(htma_obj.u))
-    fig, axs = plt.subplots(2)
+
+    def find_center_of_mass_modes(evecs):
+        # center of mass modes have equal amplitudes for all ions
+        mode_displacement_variances = np.var(evecs/np.linalg.norm(evecs,axis=0), axis=0) 
+        # get the three smallest variances
+        center_of_mass_modes = np.argsort(mode_displacement_variances)[:3]
+        return center_of_mass_modes
+    
+    center_of_mass_mode_indices = find_center_of_mass_modes(htma_obj.evecs) 
+
+    fig, axs = plt.subplots(1, 2, figsize=(12, 6))
     axs = axs.flatten()
+
     ax = axs[0]
+    ax.set_title("Normal mode frequencies")
     mode_numbers = np.arange(0, 3*htma_obj.N)
     ax.scatter(mode_numbers, htma_obj.evals * htma_obj.wz_E / 2 / np.pi * 1e-6)
+    # draw center of mass modes with star 
+    ax.scatter(center_of_mass_mode_indices, htma_obj.evals[center_of_mass_mode_indices] * htma_obj.wz_E / 2 / np.pi * 1e-6, marker='*', color='r')
+    ax.set_xlabel('Mode number')
+    ax.set_ylabel('Frequency (MHz)')    
+
     ax = axs[1] 
+    ax.set_title("Equilibrium positions")
     eq_pos_3D = htma_obj.u.reshape((3, htma_obj.N))
-    y = eq_pos_3D[1]
-    z = eq_pos_3D[2]
+    eq_pos_3D *= htma_obj.l0 * 1e6  
+    print(htma_obj.l0)
+    y = eq_pos_3D[1] 
+    z = eq_pos_3D[2] 
     ax.scatter(z, y)    
+    ax.set_xlabel("z ($\mu$m)") 
+    ax.set_ylabel("y ($\mu$m)")
+
+    plt.tight_layout() 
     plt.show()
+
 
 
