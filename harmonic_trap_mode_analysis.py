@@ -39,7 +39,12 @@ class HarmonicTrapModeAnalysis:
 
 
     def dimensionful_parameters(self):
-        pass
+        self.evals_E = self.evals * self.wz_E / 2 / np.pi
+        self.evecs_E = np.zeros((6*self.N, 3*self.N), dtype=np.complex128)
+        self.evecs_E[:3*self.N, :] = self.evecs[:3*self.N, :]
+        self.evecs_E[3*self.N:, :] = self.evecs[3*self.N:, :]   
+        
+
 
     def is_trap_stable(self):
         assert self.wx > 0e0 and self.wy > 0e0 and self.wz > 0e0, "Trap frequencies must be positive"
@@ -58,6 +63,7 @@ class HarmonicTrapModeAnalysis:
         self.calculate_equilibrium_positions()
         self.evals, self.evecs, self.E_matrix = self.calculate_normal_modes()
         self.check_for_zero_modes() 
+        self.dimensionful_parameters()
         self.hasrun = True
 
     def calculate_equilibrium_positions(self):
