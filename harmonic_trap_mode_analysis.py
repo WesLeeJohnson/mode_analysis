@@ -43,6 +43,7 @@ class HarmonicTrapModeAnalysis:
         self.evecs_E = np.zeros((6*self.N, 3*self.N), dtype=np.complex128)
         self.evecs_E[:3*self.N, :] = self.evecs[:3*self.N, :]
         self.evecs_E[3*self.N:, :] = self.evecs[3*self.N:, :]   
+        self.uE = self.u * self.l0
         
 
 
