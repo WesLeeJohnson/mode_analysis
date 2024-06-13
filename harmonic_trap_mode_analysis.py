@@ -33,9 +33,9 @@ class HarmonicTrapModeAnalysis:
         self.wx = self.wz * (self.wx_E / self.wz_E)
         k_e = 1 / (4 * np.pi * const.epsilon_0)  # Coulomb constant
         self.l0 = ((k_e * self.q_E ** 2) / (.5 * self.m_E * self.wz_E ** 2)) ** (1 / 3)
-        self.t0 = 1 / self.wz  # characteristic time
+        self.t0 = 1 / self.wz_E  # characteristic time
         self.v0 = self.l0 / self.t0  # characteristic velocity
-        self.E0 = 0.5*self.m*(self.wz**2)*self.l0**2 # characteristic energy
+        self.E0 = 0.5*self.m*(self.wz_E**2)*self.l0**2 # characteristic energy
 
 
     def dimensionful_parameters(self):
