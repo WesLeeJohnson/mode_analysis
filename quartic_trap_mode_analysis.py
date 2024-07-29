@@ -9,7 +9,7 @@ How to run:
 import numpy as np 
 from harmonic_trap_mode_analysis import HarmonicTrapModeAnalysis    
 
-class quartic_trap_mode_analysis(HarmonicTrapModeAnalysis):
+class QuarticTrapModeAnalysis(HarmonicTrapModeAnalysis):
     def __init__(self, N = 2, wx = 2*np.pi*3e6, wy = 2*np.pi*2.5e6, wz = 2*np.pi*.3e6, ionmass_amu = 170.936323, Z = 1, anharmonicity = 0.01): 
         """
         Initialize the class with the number of ions, trap frequencies, ion mass, ion charge, and anharmonicity. 
