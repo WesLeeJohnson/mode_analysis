@@ -100,67 +100,94 @@ class HarmonicTrapModeAnalysis:
         
     def find_equilibrium_positions(self, u0):
         bfgs_tolerance = 1e-34
-        out = opt.minimize(self.pot_energy, u0, method='BFGS', jac=self.force,
+        out = opt.minimize(self.potential, u0, method='BFGS', jac=self.force,
                                     options={'gtol': bfgs_tolerance, 'disp': False})
         return out.x
     
-    def pot_energy(self, pos_array):
+    def potential_trap(self, pos_array):
+        x = pos_array[0:self.N]
+        y = pos_array[self.N:2*self.N]
+        z = pos_array[2*self.N:]
+        V_trap = 0.5 * self.m * (self.wx ** 2) * np.sum(x ** 2) + \
+            0.5 * self.m * (self.wy ** 2) * np.sum(y ** 2) + \
+                0.5 * self.m * (self.wz ** 2) * np.sum(z ** 2)
+        return V_trap
+    
+    def potential_coulomb(self, pos_array):
         x = pos_array[0:self.N]
         y = pos_array[self.N:2*self.N]
         z = pos_array[2*self.N:]
 
-        dx = x.reshape((x.size, 1)) - x
-        dy = y.reshape((y.size, 1)) - y
-        dz = z.reshape((z.size, 1)) - z
-        rsep = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
+        dx = x[:, np.newaxis] - x
+        dy = y[:, np.newaxis] - y
+        dz = z[:, np.newaxis] - z
+        rsep = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2).astype(np.float64)
 
         with np.errstate(divide='ignore'):
             V_Coulomb = np.sum( np.where(rsep != 0., 1 / rsep, 0) ) / 2 # divide by 2 to avoid double counting
+        V_Coulomb *= .5 
+        return V_Coulomb
+        
+    def potential(self, pos_array):
+        return self.potential_trap(pos_array) + self.potential_coulomb(pos_array)   
 
-        #V = (self.beta + self.delta) * np.sum(self.md * x ** 2) \
-        #    + (self.beta - self.delta) * np.sum(self.md * y ** 2) \
-        #        + np.sum(self.md * z ** 2) + 0.5 * np.sum(Vc)   
-        V_trap = self.m * (self.wx ** 2) * np.sum(x ** 2) + \
-            self.m * (self.wy ** 2) * np.sum(y ** 2) + \
-                self.m * (self.wz ** 2) * np.sum(z ** 2)
-        return V_trap + V_Coulomb
-
-    def force(self, pos_array):
+    def force_trap(self, pos_array):
         x = pos_array[0:self.N]
         y = pos_array[self.N:2*self.N]
         z = pos_array[2*self.N:]
 
-        dx = x.reshape((x.size, 1)) - x
-        dy = y.reshape((y.size, 1)) - y
-        dz = z.reshape((z.size, 1)) - z
-        rsep = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2).astype(np.float64)  
+        Ftrapx = self.m * self.wx**2 * x
+        Ftrapy = self.m * self.wy**2 * y
+        Ftrapz = self.m * self.wz**2 * z
+
+        force_trap = np.hstack((Ftrapx, Ftrapy, Ftrapz))
+        return force_trap
+
+    def force_coulomb(self, pos_array): 
+        x = pos_array[0:self.N]
+        y = pos_array[self.N:2*self.N]
+        z = pos_array[2*self.N:]
+
+        dx = x[:, np.newaxis] - x
+        dy = y[:, np.newaxis] - y
+        dz = z[:, np.newaxis] - z
+        rsep = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2).astype(np.float64)
 
         with np.errstate(divide='ignore', invalid='ignore'):
             rsep3 = np.where(rsep != 0., rsep ** (-3), 0)
-        
+
         fx = dx * rsep3
         fy = dy * rsep3
         fz = dz * rsep3
 
-        Ftrapx = 2 * self.m * self.wx**2 * x
-        Ftrapy = 2 * self.m * self.wy**2 * y
-        Ftrapz = 2 * self.m * self.wz**2 * z
+        Fx = -np.sum(fx, axis=1)
+        Fy = -np.sum(fy, axis=1)
+        Fz = -np.sum(fz, axis=1)
 
-        Fx = -np.sum(fx, axis=1) + Ftrapx
-        Fy = -np.sum(fy, axis=1) + Ftrapy
-        Fz = -np.sum(fz, axis=1) + Ftrapz
+        force_coulomb = np.hstack((Fx, Fy, Fz))
+        force_coulomb *= 0.5    
+        return force_coulomb
 
-        Force = np.hstack((Fx, Fy, Fz))
+    def force(self, pos_array):
+        Force = self.force_coulomb(pos_array) + self.force_trap(pos_array)  
         return Force
-    
-    def hessian(self, pos_array):
+
+    def hessian_trap(self, pos_array):
+        Hxx = np.diag(self.m * (self.wx**2) * np.ones(self.N))
+        Hyy = np.diag(self.m * (self.wy**2) * np.ones(self.N))  
+        Hzz = np.diag(self.m * (self.wz**2) * np.ones(self.N))  
+        zeros = np.zeros((self.N, self.N))  
+        H = np.block([[Hxx, zeros, zeros], [zeros, Hyy, zeros], [zeros, zeros, Hzz]])
+        return H
+
+    def hessian_coulomb(self, pos_array):
         x = pos_array[0:self.N]
         y = pos_array[self.N:2*self.N]
         z = pos_array[2*self.N:]
-         
-        dx = x.reshape((x.size, 1)) - x
-        dy = y.reshape((y.size, 1)) - y
-        dz = z.reshape((z.size, 1)) - z
+        
+        dx = x[:, np.newaxis] - x
+        dy = y[:, np.newaxis] - y
+        dz = z[:, np.newaxis] - z
         rsep = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
 
         with np.errstate(divide='ignore'):
@@ -169,31 +196,31 @@ class HarmonicTrapModeAnalysis:
         dxsq = dx ** 2
         dysq = dy ** 2
         dzsq = dz ** 2
+        rsep2 = rsep ** 2
 
         # X derivatives, Y derivatives for alpha != beta
-        Hxx = np.mat((rsep ** 2 - 3 * dxsq) * rsep5)
-        Hyy = np.mat((rsep ** 2 - 3 * dysq) * rsep5)
-        Hzz = np.mat((rsep ** 2 - 3 * dzsq) * rsep5)
+        Hxx = (rsep2 - 3 * dxsq) * rsep5
+        Hyy = (rsep2 - 3 * dysq) * rsep5
+        Hzz = (rsep2 - 3 * dzsq) * rsep5
 
         # Above, for alpha == beta
-        # np.diag usa diagnoal value to form a matrix
-        Hxx += np.mat(np.diag(2 * self.m * (self.wx**2) -
-                              np.sum((rsep ** 2 - 3 * dxsq) * rsep5, axis=0)))
-        Hyy += np.mat(np.diag(2 * self.m * (self.wy**2) -
-                              np.sum((rsep ** 2 - 3 * dysq) * rsep5, axis=0)))
-        Hzz += np.mat(np.diag(2 * self.m  * (self.wz**2)-
-                              np.sum((rsep ** 2 - 3 * dzsq) * rsep5, axis=0)))
+        Hxx[np.diag_indices(self.N)] = -np.sum(Hxx, axis=0)
+        Hyy[np.diag_indices(self.N)] = -np.sum(Hyy, axis=0)
+        Hzz[np.diag_indices(self.N)] = -np.sum(Hzz, axis=0)
 
-        Hxy = np.mat(-3 * dx * dy * rsep5)
-        Hxy += np.mat(np.diag(3 * np.sum(dx * dy * rsep5, axis=0)))
-        Hxz = np.mat(-3 * dx * dz * rsep5)
-        Hxz += np.mat(np.diag(3 * np.sum(dx * dz * rsep5, axis=0)))
-        Hyz = np.mat(-3 * dy * dz * rsep5)
-        Hyz += np.mat(np.diag(3 * np.sum(dy * dz * rsep5, axis=0)))
+        Hxy = -3 * dx * dy * rsep5
+        Hxy[np.diag_indices(self.N)] = 3 * np.sum(dx * dy * rsep5, axis=0)
+        Hxz = -3 * dx * dz * rsep5
+        Hxz[np.diag_indices(self.N)] = 3 * np.sum(dx * dz * rsep5, axis=0)
+        Hyz = -3 * dy * dz * rsep5
+        Hyz[np.diag_indices(self.N)] = 3 * np.sum(dy * dz * rsep5, axis=0)
 
-        H = np.bmat([[Hxx, Hxy, Hxz], [Hxy, Hyy, Hyz], [Hxz, Hyz, Hzz]])
-        H = np.asarray(H)
-        H /= 2
+        H_coulomb = np.block([[Hxx, Hxy, Hxz], [Hxy, Hyy, Hyz], [Hxz, Hyz, Hzz]])
+        H_coulomb /= 2
+        return H_coulomb
+
+    def hessian(self, pos_array):
+        H = self.hessian_coulomb(pos_array) + self.hessian_trap(pos_array)  
         return H
     
     def get_E_matrix(self,u): 
