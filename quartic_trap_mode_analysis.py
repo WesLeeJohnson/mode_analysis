@@ -55,7 +55,7 @@ class QuarticTrapModeAnalysis(HarmonicTrapModeAnalysis):
     def is_trap_stable(self):
         assert self.wx > 0e0 and self.wy > 0e0 and self.wz > 0e0, "Trap frequencies must be positive"
         assert self.wx > self.wy and self.wy and self.wz, "Trap frequencies must be ordered wx > wy > wz"
-        assert self.a_2 > 0, "Anharmonicity must be positive"    
+        assert self.a_2 >= 0, "Anharmonicity must be positive"    
 
 if __name__ == "__main__": 
     import matplotlib.pyplot as plt
