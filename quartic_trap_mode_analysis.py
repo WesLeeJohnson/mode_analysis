@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     htma_obj = HarmonicTrapModeAnalysis(N=6,wz=2*np.pi*.3e6,wy=2*np.pi*2.1e6,wx=2*np.pi*2.5e6)  
     htma_obj.run()
-    qtma_obj = quartic_trap_mode_analysis(N=6,wz=2*np.pi*.3e6,wy=2*np.pi*2.1e6,wx=2*np.pi*2.5e6, anharmonicity=0.1)    
+    qtma_obj = QuarticTrapModeAnalysis(N=6,wz=2*np.pi*.3e6,wy=2*np.pi*2.1e6,wx=2*np.pi*2.5e6, anharmonicity=0.1)    
     qtma_obj.run()
 
     # check eigen vectors are orthogonal and normalized wrt Hamiltonian matrix
