@@ -41,8 +41,8 @@ class HarmonicTrapModeAnalysis:
     def dimensionful_parameters(self):
         self.evals_E = self.evals * self.wz_E / 2 / np.pi
         self.evecs_E = np.zeros((6*self.N, 3*self.N), dtype=np.complex128)
-        self.evecs_E[:3*self.N, :] = self.evecs[:3*self.N, :]
-        self.evecs_E[3*self.N:, :] = self.evecs[3*self.N:, :]   
+        self.evecs_E[3*self.N:, :] = self.evecs[3*self.N:, :] * self.l0 
+        self.evecs_E[:3*self.N, :] = self.evecs[:3*self.N, :] * self.v0
         self.uE = self.u * self.l0
         
 
