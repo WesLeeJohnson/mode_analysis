@@ -188,7 +188,7 @@ class HarmonicTrapModeAnalysis:
         dx = x[:, np.newaxis] - x
         dy = y[:, np.newaxis] - y
         dz = z[:, np.newaxis] - z
-        rsep = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
+        rsep = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2).astype(np.float64)  
 
         with np.errstate(divide='ignore'):
             rsep5 = np.where(rsep != 0., rsep ** (-5), 0)
