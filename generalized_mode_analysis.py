@@ -72,7 +72,7 @@ class GeneralizedModeAnalysis:
 
 
     def check_for_zero_modes(self):
-        pass
+        assert np.all(self.evals > 0), "All eigenvalues must be positive"   
 
 
 
@@ -346,21 +346,22 @@ if __name__ == '__main__':
     mYb_amu = 170.936323    
     mBa_amu = 137.327   
     charge_1 = 1
-    charge_2 = 2
+    charge_2 = 10
     N = 5
     wz = 2*np.pi*.2e6
     wy = 2*np.pi*1.5e6
     wx = 2*np.pi*3e6   
     ionmass_amu = [mBe_amu, mBa_amu, mYb_amu, mBa_amu, mBe_amu] 
-    ionmass_amu = [mYb_amu, mYb_amu, mYb_amu, mYb_amu, mBa_amu] 
-    gma_same_ions= GeneralizedModeAnalysis(N = N, wz = wz, wy = wy, wx = wx) 
-    #gma_different_ions = GeneralizedModeAnalysis(N=N, ionmass_amu=[mYb_amu if i%2==0 else mBa_amu for i in range(N)], wz = wz, wy = wy, wx = wx)    
-    gma_different_ions = GeneralizedModeAnalysis(N=N, ionmass_amu=ionmass_amu, wz = wz, wy = wy, wx = wx)      
-
-    gma_same_ions.run() 
+    ionmass_amu = [mYb_amu, mYb_amu, mYb_amu, mYb_amu, mBe_amu] 
     zeros = np.zeros(N)
     zeros += np.random.rand(N) * 1e-6
-    gma_different_ions.initial_equilibrium_guess = np.hstack([zeros, zeros, np.linspace(-N/2,N/2,N)]) 
+    initial_equilibrium_guess = np.hstack([zeros, zeros, np.linspace(-N/2,N/2,N)])
+    gma_same_ions= GeneralizedModeAnalysis(N = N, wz = wz, wy = wy, wx = wx, ionmass_amu = mYb_amu) 
+    gma_same_ions.initial_equilibrium_guess = initial_equilibrium_guess
+    gma_different_ions = GeneralizedModeAnalysis(N=N, ionmass_amu=ionmass_amu, wz = wz, wy = wy, wx = wx)      
+    gma_different_ions.initial_equilibrium_guess = initial_equilibrium_guess
+
+    gma_same_ions.run() 
     gma_different_ions.run()
 
     same_branch_nums = get_branch_nums(gma_same_ions.evecs)  
@@ -391,9 +392,13 @@ if __name__ == '__main__':
 
 
     gma_same_charge = GeneralizedModeAnalysis(N=N, Z=1, wz=wz, wy=wy, wx=wx)    
+    gma_same_charge.initial_equilibrium_guess = initial_equilibrium_guess   
     gma_different_charge = GeneralizedModeAnalysis(N=N, Z=[charge_1 if i%2==0 else charge_2 for i in range(N)], wz=wz, wy=wy, wx=wx)    
+    gma_different_charge.initial_equilibrium_guess = initial_equilibrium_guess  
+
+
+
     gma_same_charge.run()
-    gma_different_charge.initial_equilibrium_guess = np.hstack([zeros, zeros, np.linspace(-N/2,N/2,N)])
     gma_different_charge.run()
 
 
