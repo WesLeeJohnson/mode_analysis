@@ -80,9 +80,12 @@ class GeneralizedModeAnalysis:
         self.dimensionless_parameters()
         assert self.trap_is_stable()    
         
-        self.calculate_equilibrium_positions()
+        self.u = self.calculate_equilibrium_positions()
         #self.reindex_ions(self.u)
-        self.evals, self.evecs, self.E_matrix = self.calculate_normal_modes()
+        self.E_matrix = self.get_E_matrix(self.u)  
+        self.T_matrix = self.get_transform_matrix() 
+        self.H_matrix = self.get_H_matrix(self.T_matrix, self.E_matrix)   
+        self.evals, self.evecs = self.calculate_normal_modes(self.H_matrix)
 
 
 
@@ -93,30 +96,20 @@ class GeneralizedModeAnalysis:
         else:
             self.u0 = self.initial_equilibrium_guess
 
-        self.u = self.find_equilibrium_positions(self.u0)
-        return self.u   
+        u = self.find_equilibrium_positions(self.u0)
+        return u   
 
 
-    def calculate_normal_modes(self):
-       evals = np.zeros(3*self.N, dtype=np.complex128)
-       evecs = np.zeros((6*self.N, 3*self.N), dtype=np.complex128)
-
-       E_matrix = np.zeros((6*self.N, 6*self.N))
-       E_matrix = self.get_E_matrix(self.u)
-
-       H_matrix = np.zeros((6*self.N, 6*self.N))
-       T_matrix = self.get_transform_matrix()   
-       T_matrix_inv = np.linalg.inv(T_matrix)
-       H_matrix = T_matrix_inv.T @ E_matrix @ T_matrix_inv    
+    def calculate_normal_modes(self, H_matrix):
 
        J = self.get_symplectic_matrix()
        D_matrix = J @ H_matrix  
 
        evals, evecs = np.linalg.eig(D_matrix)
        evals, evecs = self.sort_evals(evals, evecs)
-       evecs = self.normalize_evecs(evecs, E_matrix)
+       evecs = self.normalize_evecs(evecs, H_matrix)
 
-       return evals, evecs, E_matrix
+       return evals, evecs 
 
     
     def get_initial_equilibrium_guess(self):
@@ -285,9 +278,13 @@ class GeneralizedModeAnalysis:
         KE_matrix = np.eye(3*self.N) # TODO: change for different masses
         zeros = np.zeros((3*self.N, 3*self.N)) 
         E_matrix = np.block([[PE_matrix, zeros], [zeros, KE_matrix]])
-
         return E_matrix
-    
+
+    def get_H_matrix(self, T_matrix, E_matrix):  
+        T_matrix_inv = np.linalg.inv(T_matrix)  
+        H_matrix = T_matrix_inv.T @ E_matrix @ T_matrix_inv
+        return H_matrix 
+
     def get_transform_matrix(self):
         # assuming no magnetic field
         mass_matrix = np.diag(np.repeat(self.m, 3)) 
