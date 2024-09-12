@@ -86,6 +86,7 @@ class GeneralizedModeAnalysis:
         self.T_matrix = self.get_transform_matrix() 
         self.H_matrix = self.get_H_matrix(self.T_matrix, self.E_matrix)   
         self.evals, self.evecs = self.calculate_normal_modes(self.H_matrix)
+        self.check_for_zero_modes() 
 
 
 
