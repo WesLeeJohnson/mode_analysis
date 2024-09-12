@@ -19,7 +19,7 @@ def calc_beta(wz, wr, wc):
 class PenningTrapModeAnalysis(GeneralizedModeAnalysis): 
     k_e = 1/(4*np.pi*const.epsilon_0)
     def __init__(self, N=19, XR=3.082, 
-                omega_z = 2*np.pi * 1.58e6, ionmass=9.012182, Z = 1, B=4.4588, frot=180., Vwall=1.):
+                omega_z = 2*np.pi * 1.58e6, ionmass=9.012182, Z = 1, B=4.4588, frot=180., Vwall=1., initial_equilibrium_guess=None):    
         self.N = N 
         self.XR = XR    
         self.omega_z = omega_z # assume this is the axial frequency in Hz for the first ion species
@@ -32,7 +32,7 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
         #self.quiet = quiet
         #self.precision_solving = precision_solving
         #self.method = method    
-        self.initial_equilibrium_guess = None
+        self.initial_equilibrium_guess = initial_equilibrium_guess
 
         # calculate the ion properties in experimental units  
         self.q_E = self.Z * const.e  
