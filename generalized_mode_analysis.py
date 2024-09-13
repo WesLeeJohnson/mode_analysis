@@ -133,7 +133,7 @@ class GeneralizedModeAnalysis:
         self.u = self.calculate_equilibrium_positions()
         #self.reindex_ions(self.u)
         self.E_matrix = self.get_E_matrix(self.u)  
-        self.T_matrix = self.get_transform_matrix() 
+        self.T_matrix = self.get_momentum_transform() 
         self.H_matrix = self.get_H_matrix(self.T_matrix, self.E_matrix)   
         self.evals, self.evecs = self.calculate_normal_modes(self.H_matrix)
         self.check_for_zero_modes() 
@@ -377,7 +377,7 @@ class GeneralizedModeAnalysis:
 
 
 
-    def get_transform_matrix(self):
+    def get_momentum_transform(self):
         # assuming no magnetic field
         mass_matrix = np.diag(np.repeat(self.m, 3)) 
         eye = np.eye(3*self.N)  
