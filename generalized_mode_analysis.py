@@ -19,6 +19,8 @@ import numpy as np
 import scipy.constants as const
 import scipy.optimize as opt    
 
+
+
 def ensure_numpy_array(x,N):
     if not hasattr(x, "__len__"):
         x = np.ones(N) * x 
@@ -26,10 +28,58 @@ def ensure_numpy_array(x,N):
         x = np.array(x) 
     return x    
 
+
+
 def characteristic_length(q, m, wz):
     k_e = 1 / (4 * np.pi * const.epsilon_0)  # Coulomb constant
     l0 = ((k_e * q ** 2) / (.5 * m * wz ** 2)) ** (1 / 3)
     return l0
+
+
+
+def get_norm(en,H):
+    """
+    Get the norm of the eigen vector en w.r.t. the Hamiltonian H.
+    """
+    norm = np.sqrt(en.T.conj() @ H @ en) 
+    return norm
+
+
+
+def normalize_eigen_vectors(ens,H,evs=None): 
+    """
+    Rescale the eigen vectors ens w.r.t. the Hamiltonian H.
+    """
+    shape = np.shape(ens) 
+    num_coords,num_evs = shape   
+    assert num_coords //2 == num_evs 
+    if evs is None:
+        evs = np.ones(num_evs)
+    for i in range(num_evs):
+        en = ens[:,i].reshape(num_coords,1)
+        norm = get_norm(en,H)
+        ens[:,i] = en[:,0]/norm 
+        ens[:,i] *= np.sqrt(evs[i])
+    return ens
+
+
+
+def get_canonical_transformation(H,ens,evs=None):
+    """
+    Given the eigen-solve of the dynamical matrix, get the transform matrix 
+    to the canonical coordinates.
+    X = S X', where X' = (Q,P)^T and X = (q,p)^T
+    """
+    ## TODO: understand the sign in the transformation matrix
+    sign = -1
+    num_coords, num_evs = np.shape(ens)
+    assert num_coords //2 == num_evs    
+    T = np.zeros((num_coords,num_coords),dtype=complex) 
+    ens = normalize_eigen_vectors(ens,H,evs=evs)
+    T = np.sqrt(2)*np.concatenate((np.real(ens), sign*np.imag(ens)), axis=1)
+    return T
+
+
 
 class GeneralizedModeAnalysis:
     def __init__(self, N=2, wz = 2*np.pi*.1e6,wy = 2*np.pi*1e6, wx = 2*np.pi*2e6, Z = 1, ionmass_amu = 9.012182): 
@@ -87,6 +137,8 @@ class GeneralizedModeAnalysis:
         self.H_matrix = self.get_H_matrix(self.T_matrix, self.E_matrix)   
         self.evals, self.evecs = self.calculate_normal_modes(self.H_matrix)
         self.check_for_zero_modes() 
+        self.S_matrix = self.get_canonical_transformation() 
+    
 
 
 
@@ -101,6 +153,17 @@ class GeneralizedModeAnalysis:
         return u   
 
 
+
+    def get_canonical_transformation(self):
+        return get_canonical_transformation(self.H_matrix,self.evecs,evs=self.evals)    
+
+
+
+    def normalize_eigen_vectors(self, evecs, H_matrix):
+        return normalize_eigen_vectors(evecs,H_matrix) 
+
+
+
     def calculate_normal_modes(self, H_matrix):
 
        J = self.get_symplectic_matrix()
@@ -108,15 +171,17 @@ class GeneralizedModeAnalysis:
 
        evals, evecs = np.linalg.eig(D_matrix)
        evals, evecs = self.sort_evals(evals, evecs)
-       evecs = self.normalize_evecs(evecs, H_matrix)
+       evecs = self.normalize_eigen_vectors(evecs, H_matrix) 
 
        return evals, evecs 
 
-    
+
+
     def get_initial_equilibrium_guess(self):
         self.u0 = np.zeros(3*self.N)
         self.u0[:] = (np.random.rand(3*self.N) * 2 - 1) * self.N 
         return self.u0
+
 
 
     def reindex_ions(self, u):  
@@ -134,11 +199,14 @@ class GeneralizedModeAnalysis:
         self.q_E = self.q_E[idx]
         self.Z = self.Z[idx]
 
+
+
     def find_equilibrium_positions(self, u0):
         bfgs_tolerance = 1e-34
         out = opt.minimize(self.potential, u0, method='BFGS', jac=self.force,
                                     options={'gtol': bfgs_tolerance, 'disp': False})
         return out.x
+
 
 
     def potential_trap(self, pos_array):
@@ -150,6 +218,8 @@ class GeneralizedModeAnalysis:
                 0.5 * np.sum((self.q * self.wz ** 2) * z ** 2)
         return V_trap
     
+
+
     def potential_coulomb(self, pos_array):
         x = pos_array[0:self.N]
         y = pos_array[self.N:2*self.N]
@@ -165,9 +235,13 @@ class GeneralizedModeAnalysis:
             V_Coulomb = np.sum( np.where(rsep != 0., qq / rsep, 0) ) / 2 # divide by 2 to avoid double counting
         V_Coulomb *= .5 
         return V_Coulomb
-        
+
+
+
     def potential(self, pos_array):
         return self.potential_trap(pos_array) + self.potential_coulomb(pos_array)   
+
+
 
     def force_trap(self, pos_array):
         x = pos_array[0:self.N]
@@ -180,6 +254,8 @@ class GeneralizedModeAnalysis:
 
         force_trap = np.hstack((Ftrapx, Ftrapy, Ftrapz))
         return force_trap
+
+
 
     def force_coulomb(self, pos_array): 
         x = pos_array[0:self.N]
@@ -207,9 +283,13 @@ class GeneralizedModeAnalysis:
         force_coulomb *= 0.5    
         return force_coulomb
 
+
+
     def force(self, pos_array):
         Force = self.force_coulomb(pos_array) + self.force_trap(pos_array)  
         return Force
+
+
 
     def hessian_trap(self, pos_array):
         Hxx = np.diag(self.q * (self.wx**2) * np.ones(self.N))
@@ -218,6 +298,8 @@ class GeneralizedModeAnalysis:
         zeros = np.zeros((self.N, self.N))  
         H = np.block([[Hxx, zeros, zeros], [zeros, Hyy, zeros], [zeros, zeros, Hzz]])
         return H
+
+
 
     def hessian_coulomb(self, pos_array):
         x = pos_array[0:self.N]
@@ -266,9 +348,13 @@ class GeneralizedModeAnalysis:
         H_coulomb /= 2
         return H_coulomb
 
+
+
     def hessian(self, pos_array):
         H = self.hessian_coulomb(pos_array) + self.hessian_trap(pos_array)  
         return H
+
+
 
     def get_E_matrix(self,u): 
         PE_matrix = np.zeros((3*self.N, 3*self.N), dtype=np.complex128)
@@ -281,10 +367,14 @@ class GeneralizedModeAnalysis:
         E_matrix = np.block([[PE_matrix, zeros], [zeros, KE_matrix]])
         return E_matrix
 
+
+
     def get_H_matrix(self, T_matrix, E_matrix):  
         T_matrix_inv = np.linalg.inv(T_matrix)  
         H_matrix = T_matrix_inv.T @ E_matrix @ T_matrix_inv
         return H_matrix 
+
+
 
     def get_transform_matrix(self):
         # assuming no magnetic field
@@ -294,30 +384,30 @@ class GeneralizedModeAnalysis:
         T = np.block([[eye, zeros], [zeros, mass_matrix]])  
         return T    
 
+
+
     def get_symplectic_matrix(self):
         zeros = np.zeros((3*self.N, 3*self.N), dtype=np.complex128)
         I = np.eye(3*self.N, dtype=np.complex128)
         J = np.block([[zeros, I], [-I, zeros]])
         return J    
 
+
+
     def sort_evals(self,evals, evecs):
        evals = np.imag(evals)
        sort_dex = np.argsort(evals)
        evals = evals[sort_dex]
        evecs = evecs[:,sort_dex]
-       half = int(len(evals)/2)
+       half = len(evals) // 2
        evals = evals[half:]
        evecs = evecs[:,half:]
        return evals, evecs
 
-    def normalize_evecs(self,evecs,E_matrix):
-        # vectors are orthogonal with respect to Hamiltonian matrix
-        _, modes = np.shape(evecs)
-        for i in range(modes): 
-           vec = evecs[:,i]
-           norm = np.sqrt(vec.T.conj() @ E_matrix @ vec)
-           evecs[:,i] = vec / norm
-        return evecs
+
+
+
+
 
 if __name__ == '__main__':
     def get_branch_nums(evecs): 
