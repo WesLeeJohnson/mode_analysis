@@ -102,7 +102,7 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
 
 
 
-    def get_transform_matrix(self):
+    def get_momentum_transform(self):
         mass_matrix = np.diag(np.repeat(self.m, 3)) 
         eye = np.eye(3*self.N)  
         zeros = np.zeros((3*self.N, 3*self.N))
