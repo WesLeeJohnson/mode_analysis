@@ -205,7 +205,7 @@ if __name__=='__main__':
     ax.plot(ptma.evals* ptma.omega_z/ 2/ np.pi/1e6, 'o')
     ax.set_title('Eigenfrequencies')
     ax.set_xlabel('Mode number')
-    ax.set_ylabel('Frequency (Hz)')
+    ax.set_ylabel('Frequency (MHz)')
 
     ax = axs[1]
     x = ptma.u[0:N] * ptma.l0 * 1e6 
