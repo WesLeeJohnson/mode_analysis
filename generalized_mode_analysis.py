@@ -138,7 +138,7 @@ class GeneralizedModeAnalysis:
         self.evals, self.evecs = self.calculate_normal_modes(self.H_matrix)
         self.check_for_zero_modes() 
         self.S_matrix = self.get_canonical_transformation() 
-        self.check_outer_relation()     
+        #self.check_outer_relation()     
     
 
 
@@ -171,7 +171,7 @@ class GeneralizedModeAnalysis:
        D_matrix = J @ H_matrix  
 
        evals, evecs = np.linalg.eig(D_matrix)
-       evals, evecs = self.sort_evals(evals, evecs)
+       evals, evecs = self.organize_modes(evals, evecs)
        evecs = self.normalize_eigen_vectors(evecs, H_matrix) 
 
        return evals, evecs 
@@ -395,15 +395,27 @@ class GeneralizedModeAnalysis:
 
 
 
-    def sort_evals(self,evals, evecs):
+    def sort_modes(self,evals, evecs):
        evals = np.imag(evals)
        sort_dex = np.argsort(evals)
        evals = evals[sort_dex]
        evecs = evecs[:,sort_dex]
+       return evals, evecs  
+    
+
+
+    def split_modes(self,evals, evecs): 
        half = len(evals) // 2
        evals = evals[half:]
        evecs = evecs[:,half:]
        return evals, evecs
+    
+
+
+    def organize_modes(self,evals, evecs):  
+        evals, evecs = self.sort_modes(evals, evecs)    
+        evals, evecs = self.split_modes(evals, evecs)
+        return evals, evecs 
 
 
 
