@@ -208,17 +208,22 @@ if __name__=='__main__':
     ax.set_ylabel('Frequency (Hz)')
 
     ax = axs[1]
-    x = ptma.u[0:N] 
-    y = ptma.u[N:2*N]    
+    x = ptma.u[0:N] * ptma.l0 * 1e6 
+    y = ptma.u[N:2*N] * ptma.l0 * 1e6       
     colors = ['blue']*N_Be + ['green']*N_BeOH + ['red']*N_BeH       
     ax.scatter(x, y, label='Equilibrium positions', c=colors)   
     ax.set_title('Equilibrium positions')
-    ax.set_xlabel('x')  
-    ax.set_ylabel('y')
+    ax.set_xlabel('x ($\mu$m)') 
+    ax.set_xlabel('y ($\mu$m)')
     ax.set_aspect('equal')  
     # add custom legend 
     labels = ['Be', 'BeOH', 'BeH']  
-    handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, label=label) for color, label in zip(['blue', 'green', 'red'], labels)]
+    handles = [plt.Line2D([0], [0]
+                          , marker='o'
+                          , color='w'
+                          , markerfacecolor=color
+                          , label=label) for color, label in zip(['blue', 'green', 'red'], labels)
+            ]
     ax.legend(handles=handles, labels=labels, loc='upper right')    
     plt.tight_layout()
     plt.show() 
