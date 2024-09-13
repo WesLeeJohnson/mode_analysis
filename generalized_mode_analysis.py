@@ -50,9 +50,7 @@ def normalize_eigen_vectors(ens,H,evs=None):
     """
     Rescale the eigen vectors ens w.r.t. the Hamiltonian H.
     """
-    shape = np.shape(ens) 
-    num_coords,num_evs = shape   
-    assert num_coords //2 == num_evs 
+    num_coords,num_evs = np.shape(ens)
     if evs is None:
         evs = np.ones(num_evs)
     for i in range(num_evs):
@@ -126,6 +124,34 @@ class GeneralizedModeAnalysis:
 
 
 
+    def checks(self):   
+        assert np.allclose(self.H_matrix.T, self.H_matrix.conj()), "The Hamiltonian must be Symmetric"
+        self.check_for_zero_modes() 
+        self.check_outer_relation()     
+
+
+
+    def check_outer_relation(self): 
+        en = np.zeros((6*self.N,6*self.N),dtype=complex)
+        H = self.H_matrix   
+        J = self.get_symplectic_matrix()    
+        D = J @ H   
+        evals, evecs = np.linalg.eig(D)
+        evals, evecs = self.sort_modes(evals, evecs)
+        evecs = self.normalize_eigen_vectors(evecs,H)   
+        en = evecs
+        Outers = np.zeros((6*self.N, 6*self.N),dtype=complex)
+        for i in range(6*self.N):
+            norm = get_norm(en[:,i],H) 
+            Outers = Outers + np.outer(en[:,i],en[:,i].conj())/norm 
+        I_right = H @ Outers 
+        I_left  = Outers @ H 
+        eye = np.eye(6*self.N,dtype=complex)
+        assert np.allclose(I_left,eye) 
+        assert np.allclose(I_right,eye) 
+
+
+
     def run(self):
         self.dimensionless_parameters()
         assert self.trap_is_stable()    
@@ -133,11 +159,11 @@ class GeneralizedModeAnalysis:
         self.u = self.calculate_equilibrium_positions()
         #self.reindex_ions(self.u)
         self.E_matrix = self.get_E_matrix(self.u)  
-        self.T_matrix = self.get_transform_matrix() 
+        self.T_matrix = self.get_momentum_transform() 
         self.H_matrix = self.get_H_matrix(self.T_matrix, self.E_matrix)   
         self.evals, self.evecs = self.calculate_normal_modes(self.H_matrix)
-        self.check_for_zero_modes() 
-        self.S_matrix = self.get_canonical_transformation() 
+        self.S_matrix = self.get_normal_mode_transform() 
+        self.checks()   
     
 
 
@@ -154,7 +180,7 @@ class GeneralizedModeAnalysis:
 
 
 
-    def get_canonical_transformation(self):
+    def get_normal_mode_transform(self):
         return get_canonical_transformation(self.H_matrix,self.evecs,evs=self.evals)    
 
 
@@ -170,7 +196,7 @@ class GeneralizedModeAnalysis:
        D_matrix = J @ H_matrix  
 
        evals, evecs = np.linalg.eig(D_matrix)
-       evals, evecs = self.sort_evals(evals, evecs)
+       evals, evecs = self.organize_modes(evals, evecs)
        evecs = self.normalize_eigen_vectors(evecs, H_matrix) 
 
        return evals, evecs 
@@ -376,7 +402,7 @@ class GeneralizedModeAnalysis:
 
 
 
-    def get_transform_matrix(self):
+    def get_momentum_transform(self):
         # assuming no magnetic field
         mass_matrix = np.diag(np.repeat(self.m, 3)) 
         eye = np.eye(3*self.N)  
@@ -394,15 +420,27 @@ class GeneralizedModeAnalysis:
 
 
 
-    def sort_evals(self,evals, evecs):
+    def sort_modes(self,evals, evecs):
        evals = np.imag(evals)
        sort_dex = np.argsort(evals)
        evals = evals[sort_dex]
        evecs = evecs[:,sort_dex]
+       return evals, evecs  
+
+
+
+    def split_modes(self,evals, evecs): 
        half = len(evals) // 2
        evals = evals[half:]
        evecs = evecs[:,half:]
        return evals, evecs
+
+
+
+    def organize_modes(self,evals, evecs):
+       evals, evecs = self.sort_modes(evals, evecs)
+       evals, evecs = self.split_modes(evals, evecs) 
+       return evals, evecs  
 
 
 
