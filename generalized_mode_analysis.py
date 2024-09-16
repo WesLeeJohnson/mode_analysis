@@ -143,9 +143,19 @@ class GeneralizedModeAnalysis:
 
 
 
+
+    def check_diagnolization(self):
+        M = np.linalg.inv(self.T_matrix) @ self.S_matrix    
+        H_diag = M.T @ self.E_matrix @ M    
+        H_diag_check = np.diag(np.tile(self.evals,2)) 
+        np.set_printoptions(precision=2, suppress=True) 
+        assert np.allclose(H_diag,H_diag_check)
+
+
+
     def checks(self):   
-        assert np.allclose(self.H_matrix.T, self.H_matrix), "The Hamiltonian must be Symmetric"
         self.check_outer_relation()
+        self.check_diagnolization()
 
 
 
