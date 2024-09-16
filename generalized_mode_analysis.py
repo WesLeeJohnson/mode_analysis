@@ -50,9 +50,7 @@ def normalize_eigen_vectors(ens,H,evs=None):
     """
     Rescale the eigen vectors ens w.r.t. the Hamiltonian H.
     """
-    shape = np.shape(ens) 
-    num_coords,num_evs = shape   
-    assert num_coords //2 == num_evs 
+    num_coords,num_evs = np.shape(ens)
     if evs is None:
         evs = np.ones(num_evs)
     for i in range(num_evs):
@@ -126,6 +124,31 @@ class GeneralizedModeAnalysis:
 
 
 
+    def check_outer_relation(self): 
+        H = self.H_matrix   
+        D = self.get_symplectic_matrix() @ H
+        Eval, Evec = np.linalg.eig(D)
+        _, en = self.sort_modes(Eval,Evec)
+        en = self.normalize_eigen_vectors(en,H)
+        Outers = np.zeros((6*self.N,6*self.N),dtype=complex)
+        for i in range(6*self.N):
+            norm = get_norm(en[:,i],H)
+            Outers = Outers + np.outer(en[:,i],en[:,i].conj())/norm 
+        I_right = H @ Outers
+        I_left  = Outers @ H
+        eye = np.eye(6*self.N,dtype=complex)
+        np.set_printoptions(precision=2, suppress=True) 
+        assert np.allclose(I_left,eye) 
+        assert np.allclose(I_right,eye) 
+
+
+
+    def checks(self):   
+        assert np.allclose(self.H_matrix.T, self.H_matrix), "The Hamiltonian must be Symmetric"
+        self.check_outer_relation()
+
+
+
     def run(self):
         self.dimensionless_parameters()
         assert self.trap_is_stable()    
@@ -138,7 +161,7 @@ class GeneralizedModeAnalysis:
         self.evals, self.evecs = self.calculate_normal_modes(self.H_matrix)
         self.check_for_zero_modes() 
         self.S_matrix = self.get_canonical_transformation() 
-        #self.check_outer_relation()     
+        self.checks() 
     
 
 
@@ -416,27 +439,6 @@ class GeneralizedModeAnalysis:
         evals, evecs = self.sort_modes(evals, evecs)    
         evals, evecs = self.split_modes(evals, evecs)
         return evals, evecs 
-
-
-
-
-    def check_outer_relation(self): 
-        H = self.H_matrix   
-        en = np.zeros((6*self.N,6*self.N),dtype=complex)
-        en[:,3*self.N:] = self.evecs
-        en[:,:3*self.N] = self.evecs.conj()[:,::-1] 
-        Outers = np.zeros((6*self.N, 6*self.N),dtype=complex)
-        for i in range(6*self.N):
-            norm = get_norm(en[:,i],H) 
-            Outers = Outers + np.outer(en[:,i],en[:,i].conj())/norm 
-        I_right = H @ Outers 
-        I_left  = Outers @ H 
-        eye = np.eye(6*self.N,dtype=complex)
-        np.set_printoptions(precision=2,suppress=True) 
-        print(I_right)
-        print(I_left)
-        assert np.allclose(I_left,eye) 
-        assert np.allclose(I_right,eye) 
 
 
 
