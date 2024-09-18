@@ -170,11 +170,11 @@ class GeneralizedModeAnalysis:
         self.T_matrix = self.get_momentum_transform() 
         self.H_matrix = self.get_H_matrix(self.T_matrix, self.E_matrix)   
         self.evals, self.evecs = self.calculate_normal_modes(self.H_matrix)
+        self.evecs_vel = self.get_eigen_vectors_xv_coords(self.T_matrix,self.evecs)    
         self.check_for_zero_modes() 
         self.S_matrix = self.get_canonical_transformation() 
         self.checks() 
     
-
 
 
     def calculate_equilibrium_positions(self):
@@ -196,6 +196,13 @@ class GeneralizedModeAnalysis:
 
     def normalize_eigen_vectors(self, evecs, H_matrix):
         return normalize_eigen_vectors(evecs,H_matrix) 
+
+
+
+    def get_eigen_vectors_xv_coords(self,T,ens): 
+        ens_vel = np.zeros_like(ens,dtype=complex)
+        ens_vel[:,:] = np.linalg.inv(T) @ ens
+        return ens_vel 
 
 
 
