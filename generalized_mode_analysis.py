@@ -50,7 +50,7 @@ def normalize_eigen_vectors(ens,H,evs=None):
     """
     Rescale the eigen vectors ens w.r.t. the Hamiltonian H.
     """
-    ens_rescaled = np.zeros(np.shape(ens),dtype=complex)    
+    ens_rescaled = np.zeros_like(ens,dtype=complex)
     num_coords,num_evs = np.shape(ens)
     if evs is None:
         evs = np.ones(num_evs)
