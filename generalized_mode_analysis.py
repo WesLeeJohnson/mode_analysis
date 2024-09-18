@@ -200,14 +200,13 @@ class GeneralizedModeAnalysis:
 
     def calculate_normal_modes(self, H_matrix):
 
-       J = self.get_symplectic_matrix()
-       D_matrix = J @ H_matrix  
+        J = self.get_symplectic_matrix()
+        D_matrix = J @ H_matrix  
+        evals, evecs = np.linalg.eig(D_matrix)   
+        evals, evecs = self.organize_modes(evals, evecs)
+        evecs = self.normalize_eigen_vectors(evecs, H_matrix) 
 
-       evals, evecs = np.linalg.eig(D_matrix)
-       evals, evecs = self.organize_modes(evals, evecs)
-       evecs = self.normalize_eigen_vectors(evecs, H_matrix) 
-
-       return evals, evecs 
+        return evals, evecs 
 
 
 
