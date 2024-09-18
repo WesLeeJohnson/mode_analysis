@@ -41,7 +41,7 @@ def get_norm(en,H):
     """
     Get the norm of the eigen vector en w.r.t. the Hamiltonian H.
     """
-    norm = np.sqrt(en.T.conj() @ H @ en) 
+    norm = np.sqrt(en.T.conj() @ H @ en)
     return norm
 
 
@@ -50,15 +50,16 @@ def normalize_eigen_vectors(ens,H,evs=None):
     """
     Rescale the eigen vectors ens w.r.t. the Hamiltonian H.
     """
+    ens_rescaled = np.zeros(np.shape(ens),dtype=complex)    
     num_coords,num_evs = np.shape(ens)
     if evs is None:
         evs = np.ones(num_evs)
     for i in range(num_evs):
         en = ens[:,i].reshape(num_coords,1)
         norm = get_norm(en,H)
-        ens[:,i] = en[:,0]/norm 
-        ens[:,i] *= np.sqrt(evs[i])
-    return ens
+        ens_rescaled[:,i] = en[:,0]/norm
+        ens_rescaled[:,i] *= np.sqrt(evs[i])
+    return ens_rescaled 
 
 
 
