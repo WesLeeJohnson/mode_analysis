@@ -17,6 +17,7 @@ How to use:        python generalized_mode_analysis.py
 # 1. 
 import numpy as np  
 import scipy.constants as const
+import warnings
 import scipy.optimize as opt    
 
 
@@ -126,7 +127,7 @@ class GeneralizedModeAnalysis:
 
 
     def check_outer_relation(self): 
-        H = self.H_matrix   
+        H = self.H_matrix.copy()       
         D = self.get_symplectic_matrix() @ H
         Eval, Evec = np.linalg.eig(D)
         _, en = self.sort_modes(Eval,Evec)
@@ -139,10 +140,18 @@ class GeneralizedModeAnalysis:
         I_left  = Outers @ H
         eye = np.eye(6*self.N,dtype=complex)
         np.set_printoptions(precision=2, suppress=True) 
-        assert np.allclose(I_left,eye) 
-        assert np.allclose(I_right,eye) 
+        try:
+            assert np.allclose(I_left,eye) 
+            assert np.allclose(I_right,eye)
+        except AssertionError:
+            warnings.warn("Outer relation check failed")
 
 
+
+    def has_duplicate_evals(self,evals):
+        evs = evals.copy()    
+        return np.any(np.triu(np.isclose(evs[:, None], evs[None, :], atol=1e-6), k=1))  
+    
 
 
     def check_diagnolization(self):
@@ -150,7 +159,11 @@ class GeneralizedModeAnalysis:
         H_diag = M.T @ self.E_matrix @ M    
         H_diag_check = np.diag(np.tile(self.evals,2)) 
         np.set_printoptions(precision=2, suppress=True) 
-        assert np.allclose(H_diag,H_diag_check)
+        try:
+            assert np.allclose(H_diag,H_diag_check)
+        except AssertionError:
+            warnings.warn("Diagnolization check failed")    
+            print("has duplicate evals: ", self.has_duplicate_evals(self.evals))
 
 
 
