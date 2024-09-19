@@ -94,6 +94,7 @@ class GeneralizedModeAnalysis:
         self.q_E = self.Z * const.e
         self.m_E = self.ionmass_amu * const.u 
         self.initial_equilibrium_guess = None
+        self.hasrun = False 
     
    
    
@@ -187,6 +188,7 @@ class GeneralizedModeAnalysis:
         self.check_for_zero_modes() 
         self.S_matrix = self.get_canonical_transformation() 
         self.checks() 
+        self.hasrun = True  
     
 
 
