@@ -225,7 +225,8 @@ class GeneralizedModeAnalysis:
 
         J = self.get_symplectic_matrix()
         D_matrix = J @ H_matrix  
-        evals, evecs = np.linalg.eig(D_matrix)   
+        # u_n(t) = exp(-i w_n t) u_n(0), minus by convention
+        evals, evecs = np.linalg.eig(-D_matrix)   
         evals, evecs = self.organize_modes(evals, evecs)
         evecs = self.normalize_eigen_vectors(evecs, H_matrix) 
 
