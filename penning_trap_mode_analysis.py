@@ -96,8 +96,8 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
     def get_B_matrix(self): 
         cross = np.diag( 1/2 * self.m * ( self.wc - 2*self.wr) )    
         B_matrix = np.zeros((3*self.N, 3*self.N))
-        B_matrix[self.N:2*self.N, 0:self.N] = -cross    
-        B_matrix[0:self.N, self.N:2*self.N] = cross
+        B_matrix[self.N:2*self.N, 0:self.N] = cross    
+        B_matrix[0:self.N, self.N:2*self.N] = -cross
         return B_matrix 
 
 
