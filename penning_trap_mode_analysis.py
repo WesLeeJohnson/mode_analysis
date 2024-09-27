@@ -14,7 +14,7 @@ import numpy as np
 import scipy.constants as const
 
 def calc_beta(wz, wr, wc): 
-    return ( wr*wc - wr**2) / wz**2 - 1/2 
+    return (wr*wc - wr**2) / wz**2 - 1/2
 
 class PenningTrapModeAnalysis(GeneralizedModeAnalysis): 
     k_e = 1/(4*np.pi*const.epsilon_0)
@@ -53,7 +53,8 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
     def trap_is_stable(self): 
         try: 
             assert np.all(self.beta > 0), "Beta must be positive: " + str(self.beta)
-            assert np.all(self.delta > 0), "Delta must be positive: " + str(self.delta)
+            assert np.all(self.delta >=0), "Delta must be positive: " + str(self.delta) 
+            assert np.all(self.beta - self.delta > 0), "Beta - delta must be positive: " + str(self.beta - self.delta)
             assert np.all(self.wmag_E > 0), "The magnetron frequency must be positive: " + str(self.wmag_E) 
             return True
         except AssertionError as e:
@@ -163,15 +164,13 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
 if __name__=='__main__': 
 
     mBe_amu = 9.012182  
-    mYb_amu = 170.936323    
-    mBa_amu = 137.327   
-    mBeH_amu = mBe_amu + const.m_p / const.u    
+    mBeH_amu = mBe_amu + 1.00784    
     mBeOH_amu = mBe_amu + const.m_p / const.u + 15.999 
-    
+
     N_perturb = 2
-    N_Be = 50 
-    N_BeOH = 25
-    N_BeH = 25 
+    N_Be = 50
+    N_BeH = 50 
+    N_BeOH = 0
     N = N_Be + N_BeOH + N_BeH   
     B = 4.4588  
     masses = np.hstack([mBe_amu*np.ones(N_Be), mBeOH_amu*np.ones(N_BeOH), mBeH_amu*np.ones(N_BeH)])
@@ -179,21 +178,12 @@ if __name__=='__main__':
     frot = 180 
     ptma = PenningTrapModeAnalysis(N = N, ionmass=masses, Z=charges, frot=frot, B = B) 
     
-    def get_inital_guess(N, N_split):   
-        # mean is 0, variance is np.sqrt(N_split), there are N_split samples      
-        x_Be = np.random.normal(0, np.sqrt(N_split), N_split)   
-        y_Be = np.random.normal(0, np.sqrt(N_split), N_split) 
-        r_BeOH = np.random.normal(np.sqrt(N_split), np.sqrt(N - N_split), N - N_split)
-        phi_BeOH = np.linspace(0, 2*np.pi, N - N_split)
-        x_BeOH = r_BeOH * np.cos(phi_BeOH)
-        y_BeOH = r_BeOH * np.sin(phi_BeOH)  
-        return np.hstack((x_Be, x_BeOH, y_Be, y_BeOH, np.zeros(N))) 
-
-    #initial_guess = get_inital_guess(N, N_split)
-    initial_guess = None
+    initial_guess = np.zeros(3*N)   
+    initial_guess[0:2*N] = np.random.normal(0, 1, 2*N)  
     for it in range(N_perturb): 
         ptma.initial_equilibrium_guess = initial_guess
         ptma.run() 
+        print(ptma.wc_E/2/np.pi/1e6)    
         initial_guess = ptma.u  
     
 
@@ -203,6 +193,8 @@ if __name__=='__main__':
 
     ax = axs[0]
     ax.plot(ptma.evals* ptma.omega_z/ 2/ np.pi/1e6, 'o')
+    ax.axvline(x=100, color='k', linestyle='--')
+    ax.axvline(x=200, color='k', linestyle='--')  
     ax.set_title('Eigenfrequencies')
     ax.set_xlabel('Mode number')
     ax.set_ylabel('Frequency (MHz)')
