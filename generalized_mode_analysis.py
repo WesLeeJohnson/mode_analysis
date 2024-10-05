@@ -109,8 +109,8 @@ class GeneralizedModeAnalysis:
         self.wy = self.wz * (self.wy_E / self.wz_E) 
         self.wx = self.wz * (self.wx_E / self.wz_E)
         # system parameters
-        self.l0 = characteristic_length(q0, m0, self.wz_E)  # characteristic length 
-        self.t0 = 1 / self.wz_E  # characteristic time
+        self.l0 = characteristic_length(q0, m0, self.wz_E[0])  # characteristic length 
+        self.t0 = 1 / self.wz_E[0]  # characteristic time
         self.v0 = self.l0 / self.t0  # characteristic velocity
         self.E0 = 0.5 * m0 * self.v0 ** 2  # characteristic energy  
 
@@ -200,6 +200,7 @@ class GeneralizedModeAnalysis:
             self.u0 = self.initial_equilibrium_guess
 
         u = self.find_equilibrium_positions(self.u0)
+        self.p0 = self.potential(u)
         return u   
 
 
