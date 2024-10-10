@@ -77,6 +77,7 @@ def get_canonical_transformation(H,ens,evs=None):
     T = np.zeros((num_coords,num_coords),dtype=complex) 
     ens = normalize_eigen_vectors(ens,H,evs=evs)
     T = np.sqrt(2)*np.concatenate((np.real(ens), sign*np.imag(ens)), axis=1)
+    # the sign is likely due to the convention of writing the time evolution as exp(-iwt)
     return T
 
 
@@ -84,19 +85,22 @@ def get_canonical_transformation(H,ens,evs=None):
 class GeneralizedModeAnalysis:
     def __init__(self, N=2, wz = 2*np.pi*.1e6,wy = 2*np.pi*1e6, wx = 2*np.pi*2e6, Z = 1, ionmass_amu = 9.012182): 
         self.N = N
-        self.wz_E = wz
-        self.wy_E = wy
-        self.wx_E = wx
-        self.Z = Z
-        self.Z = ensure_numpy_array(Z,N)    
-        self.ionmass_amu = ionmass_amu  
+        self.Z = ensure_numpy_array(Z,N)
         self.ionmass_amu = ensure_numpy_array(ionmass_amu,N)
         self.q_E = self.Z * const.e
         self.m_E = self.ionmass_amu * const.u 
         self.initial_equilibrium_guess = None
         self.hasrun = False 
+        # trapping frequencies
+        self.wz_E = self.calculate_species_trap_frequencies(self.m_E, self.q_E, wz)    
+        self.wy_E = self.calculate_species_trap_frequencies(self.m_E, self.q_E, wy)
+        self.wx_E = self.calculate_species_trap_frequencies(self.m_E, self.q_E, wx)   
     
-   
+    def calculate_species_trap_frequencies(self,m_E, q_E, omega): 
+        # assume that the trapping frequency given corresponds to the first ion species 
+        u_r_sqr = np.sqrt(m_E[0] / q_E[0]) * omega
+        omega_E = np.sqrt(q_E / m_E) * u_r_sqr    
+        return omega_E 
    
     def dimensionless_parameters(self):
         q0 = self.q_E[0]
@@ -118,7 +122,7 @@ class GeneralizedModeAnalysis:
     
     def trap_is_stable(self):
         # check that all trap frequencies are positive  
-        return self.wz_E > 0 and self.wy_E > 0 and self.wx_E > 0
+        return np.all(self.wz_E > 0) and np.all(self.wy_E > 0) and np.all(self.wx_E > 0)
 
 
 
