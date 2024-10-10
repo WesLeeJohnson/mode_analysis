@@ -37,8 +37,7 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
         # calculate the ion properties in experimental units  
         self.q_E = self.Z * const.e  
         self.m_E = self.ionmass * const.u
-        self.u_r_sqr = np.sqrt(self.m_E[0] / self.q_E[0]) * self.omega_z 
-        self.wz_E = np.sqrt(self.q_E / self.m_E) * self.u_r_sqr
+        self.wz_E = super().calculate_species_trap_frequencies(self.m_E, self.q_E, self.omega_z)
         self.wc_E = self.q_E * self.B / self.m_E    
         self.wr_E = frot * 2*np.pi * 1e3    
         self.wmag_E = 1/2*(self.wc_E - np.sqrt(self.wc_E**2 - 2*self.wz_E**2))
