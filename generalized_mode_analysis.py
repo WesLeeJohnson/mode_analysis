@@ -103,18 +103,20 @@ class GeneralizedModeAnalysis:
         return omega_E 
    
     def dimensionless_parameters(self):
+        # normalize to the first ion species    
         q0 = self.q_E[0]
         m0 = self.m_E[0]    
+        w0 = self.wz_E[0]   
         # ion properties    
         self.m = self.m_E / m0
         self.q = self.q_E / q0  
         # trap frequencies
-        self.wz = 1 
-        self.wy = self.wz * (self.wy_E / self.wz_E) 
-        self.wx = self.wz * (self.wx_E / self.wz_E)
+        self.wz = self.wz_E / w0 
+        self.wy = self.wy_E / w0 
+        self.wx = self.wx_E / w0 
         # system parameters
-        self.l0 = characteristic_length(q0, m0, self.wz_E[0])  # characteristic length 
-        self.t0 = 1 / self.wz_E[0]  # characteristic time
+        self.l0 = characteristic_length(q0, m0, w0)  # characteristic length 
+        self.t0 = 1 / w0  # characteristic time
         self.v0 = self.l0 / self.t0  # characteristic velocity
         self.E0 = 0.5 * m0 * self.v0 ** 2  # characteristic energy  
 
