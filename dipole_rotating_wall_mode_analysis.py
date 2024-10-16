@@ -22,12 +22,12 @@ class DipoleRotatingWallModeAnalysis(PenningTrapModeAnalysis):
     def potential_trap(self, pos_array):
         V_trap = super().potential_trap(pos_array)
         x = pos_array[0:self.N]
-        V_trap += np.sum(self.q * self.kappa * self.wz ** 2 * x)    
+        V_trap += np.sum(self.m * self.kappa * self.wz ** 2 * x)    
         return V_trap
 
     def force_trap(self, pos_array):
         F_trap = super().force_trap(pos_array)
-        F_trap[0:self.N] += self.q * self.kappa * self.wz ** 2 * np.ones(self.N)
+        F_trap[0:self.N] += self.m * self.kappa * self.wz ** 2 * np.ones(self.N)
         return F_trap   
     
 if __name__=="__main__":

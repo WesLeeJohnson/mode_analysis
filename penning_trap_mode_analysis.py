@@ -116,9 +116,9 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
         x = pos_array[0:self.N]
         y = pos_array[self.N:2*self.N]
         z = pos_array[2*self.N:]
-        V_trap = 0.5 * np.sum((self.q * (self.beta + self.delta) * self.wz ** 2) * x ** 2) + \
-            0.5 * np.sum((self.q * (self.beta - self.delta) * self.wz ** 2) * y ** 2) + \
-                0.5 * np.sum((self.q * self.wz ** 2) * z ** 2)
+        V_trap = 0.5 * np.sum((self.m * (self.beta + self.delta) * self.wz ** 2) * x ** 2) + \
+            0.5 * np.sum((self.m * (self.beta - self.delta) * self.wz ** 2) * y ** 2) + \
+                0.5 * np.sum((self.m * self.wz ** 2) * z ** 2)
         return V_trap
 
 
@@ -128,9 +128,9 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
         y = pos_array[self.N:2*self.N]
         z = pos_array[2*self.N:]
 
-        Ftrapx = self.q * (self.beta + self.delta) * self.wz**2 * x
-        Ftrapy = self.q * (self.beta - self.delta) * self.wz**2 * y
-        Ftrapz = self.q * self.wz**2 * z
+        Ftrapx = self.m * (self.beta + self.delta) * self.wz**2 * x
+        Ftrapy = self.m * (self.beta - self.delta) * self.wz**2 * y
+        Ftrapz = self.m * self.wz**2 * z
 
         force_trap = np.hstack((Ftrapx, Ftrapy, Ftrapz))
         return force_trap
@@ -138,9 +138,9 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
         
 
     def hessian_trap(self, pos_array):
-        Hxx = np.diag(self.q * (self.beta + self.delta) * (self.wz**2) * np.ones(self.N))
-        Hyy = np.diag(self.q * (self.beta - self.delta) * (self.wz**2) * np.ones(self.N))  
-        Hzz = np.diag(self.q * (self.wz**2) * np.ones(self.N))  
+        Hxx = np.diag(self.m * (self.beta + self.delta) * (self.wz**2) * np.ones(self.N))
+        Hyy = np.diag(self.m * (self.beta - self.delta) * (self.wz**2) * np.ones(self.N))  
+        Hzz = np.diag(self.m * (self.wz**2) * np.ones(self.N))  
         zeros = np.zeros((self.N, self.N))  
         H = np.block([[Hxx, zeros, zeros], [zeros, Hyy, zeros], [zeros, zeros, Hzz]])
         return H

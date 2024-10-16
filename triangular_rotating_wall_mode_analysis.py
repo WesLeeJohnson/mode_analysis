@@ -22,24 +22,24 @@ class TriangularRotatingWallModeAnalysis(PenningTrapModeAnalysis):
         V_trap = super().potential_trap(pos_array)
         x = pos_array[0:self.N]
         y = pos_array[self.N:2*self.N]  
-        V_trap += np.sum(self.q * self.kappa * self.wz ** 2 * (x**3 - 3*x*y**2)  )
+        V_trap += np.sum(self.m * self.kappa * self.wz ** 2 * (x**3 - 3*x*y**2)  )
         return V_trap
 
     def force_trap(self, pos_array):
         F_trap = super().force_trap(pos_array)
         x = pos_array[0:self.N]
         y = pos_array[self.N:2*self.N]  
-        F_trap[0:self.N] += self.q * self.kappa * self.wz ** 2 * (3 * x**2 - 3*y**2)
-        F_trap[self.N:2*self.N] += self.q * self.kappa * self.wz ** 2 * (-6*x*y) 
+        F_trap[0:self.N] += self.m * self.kappa * self.wz ** 2 * (3 * x**2 - 3*y**2)
+        F_trap[self.N:2*self.N] += self.m * self.kappa * self.wz ** 2 * (-6*x*y) 
         return F_trap   
 
     def hessian_trap(self, pos_array):
         H = super().hessian_trap(pos_array) 
         x = pos_array[0:self.N]
         y = pos_array[self.N:2*self.N]
-        H_xx_tri = np.diag(self.q * self.kappa * self.wz ** 2 * (6*x))
-        H_yy_tri = np.diag(self.q * self.kappa * self.wz ** 2 * (-6*x))
-        H_xy_tri = np.diag(self.q * self.kappa * self.wz ** 2 * (-6*y)) 
+        H_xx_tri = np.diag(self.m * self.kappa * self.wz ** 2 * (6*x))
+        H_yy_tri = np.diag(self.m * self.kappa * self.wz ** 2 * (-6*x))
+        H_xy_tri = np.diag(self.m * self.kappa * self.wz ** 2 * (-6*y)) 
         H[:2*self.N,:2*self.N] += np.block([[H_xx_tri, H_xy_tri], [H_xy_tri, H_yy_tri]])    
         return H
     
