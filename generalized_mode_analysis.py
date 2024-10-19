@@ -418,7 +418,8 @@ class GeneralizedModeAnalysis:
         H = self.hessian_coulomb(pos_array) + self.hessian_trap(pos_array)  
         return H
 
-
+    def get_mass_matrix(self,m):    
+        return np.diag(np.tile(m, 3)) 
 
     def get_E_matrix(self,u): 
         PE_matrix = np.zeros((3*self.N, 3*self.N), dtype=np.complex128)
@@ -426,7 +427,7 @@ class GeneralizedModeAnalysis:
         E_matrix = np.zeros((6*self.N, 6*self.N), dtype=np.complex128)
 
         PE_matrix = self.hessian(u)
-        KE_matrix = np.eye(3*self.N) # TODO: change for different masses
+        KE_matrix = self.get_mass_matrix(self.m) 
         zeros = np.zeros((3*self.N, 3*self.N)) 
         E_matrix = np.block([[PE_matrix, zeros], [zeros, KE_matrix]])
         return E_matrix
@@ -442,7 +443,7 @@ class GeneralizedModeAnalysis:
 
     def get_momentum_transform(self):
         # assuming no magnetic field
-        mass_matrix = np.diag(np.repeat(self.m, 3)) 
+        mass_matrix = self.get_mass_matrix(self.m)  
         eye = np.eye(3*self.N)  
         zeros = np.zeros((3*self.N, 3*self.N))
         T = np.block([[eye, zeros], [zeros, mass_matrix]])  
@@ -486,6 +487,35 @@ class GeneralizedModeAnalysis:
 
 
 if __name__ == '__main__':
+    # set plotting settings
+
+    import matplotlib.pyplot as plt
+    plt.rcParams.update({'font.size': 16})
+    plt.rcParams.update({'figure.autolayout': True})
+    plt.rcParams.update({'figure.figsize': (8, 6)})
+    plt.rcParams.update({'lines.linewidth': 2})
+    plt.rcParams.update({'axes.linewidth': 2})
+    plt.rcParams.update({'xtick.major.width': 2})
+    plt.rcParams.update({'ytick.major.width': 2})
+    plt.rcParams.update({'xtick.minor.width': 2})
+    plt.rcParams.update({'ytick.minor.width': 2})
+    plt.rcParams.update({'xtick.direction': 'in'})
+    plt.rcParams.update({'ytick.direction': 'in'})
+    plt.rcParams.update({'xtick.labelsize': 16})
+    plt.rcParams.update({'ytick.labelsize': 16})
+    plt.rcParams.update({'axes.labelsize': 16})
+    plt.rcParams.update({'legend.fontsize': 16})
+    plt.rcParams.update({'savefig.format': 'pdf'})
+    plt.rcParams.update({'savefig.bbox': 'tight'})
+    plt.rcParams.update({'savefig.pad_inches': 0.1})
+    plt.rcParams.update({'savefig.transparent': True})
+    # grid 
+    plt.rcParams.update({'axes.grid': True})
+    plt.rcParams.update({'grid.linestyle': '-'})
+    plt.rcParams.update({'grid.linewidth': 1})
+    plt.rcParams.update({'grid.alpha': 0.5})
+    plt.rcParams.update({'grid.color': 'black'})
+
     def get_branch_nums(evecs): 
         num_coords, num_modes = np.shape(evecs)   
         N = num_modes // 3
@@ -512,13 +542,12 @@ if __name__ == '__main__':
     charge_1 = 1
     charge_2 = 10
     N = 5
+    split = 3
     wz = 2*np.pi*.2e6
     wy = 2*np.pi*1.5e6
     wx = 2*np.pi*3e6   
-    ionmass_amu = [mBe_amu, mBa_amu, mYb_amu, mBa_amu, mBe_amu] 
-    ionmass_amu = [mYb_amu, mYb_amu, mYb_amu, mYb_amu, mBe_amu] 
+    ionmass_amu = [mYb_amu if i<N-split else mBe_amu for i in range(N)] 
     zeros = np.zeros(N)
-    zeros += np.random.rand(N) * 1e-6
     initial_equilibrium_guess = np.hstack([zeros, zeros, np.linspace(-N/2,N/2,N)])
     gma_same_ions= GeneralizedModeAnalysis(N = N, wz = wz, wy = wy, wx = wx, ionmass_amu = mYb_amu) 
     gma_same_ions.initial_equilibrium_guess = initial_equilibrium_guess
@@ -528,31 +557,89 @@ if __name__ == '__main__':
     gma_same_ions.run() 
     gma_different_ions.run()
 
+    def get_evals_alternate_calculation(gma): 
+        N = gma.N
+        masses = gma.m
+        mass_vec = np.tile(masses,3)
+        weights = 1/np.sqrt(np.outer(mass_vec,mass_vec))
+        PE_matrix = gma.E_matrix[:3*N,:3*N]  
+        PE_weighted = weights * PE_matrix   
+        evals, _ = np.linalg.eigh(PE_weighted)
+        return np.sqrt(evals)
+
+
     same_branch_nums = get_branch_nums(gma_same_ions.evecs)  
     diff_branch_nums = get_branch_nums(gma_different_ions.evecs)
     print(same_branch_nums)
     print(diff_branch_nums)
     import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(1,1)
-    x = np.zeros(gma_same_ions.N)   
-    z_same = gma_same_ions.u[2*gma_same_ions.N:] *gma_same_ions.l0 * 1e6
-    z_diff = gma_different_ions.u[2*gma_different_ions.N:] * gma_different_ions.l0 * 1e6    
-    ax.scatter(x,z_same, label='Same ions', s = gma_same_ions.m) 
-    # add text annotation showing the ion number
-    for i, txt in enumerate(range(gma_same_ions.N)):
-        ax.annotate(txt, (x[i], z_same[i])) 
-    ax.scatter(x,z_diff, label='Different ions', s = gma_different_ions.m)  
-    for i, txt in enumerate(range(gma_different_ions.N)):
-        ax.annotate(txt, (x[i], z_diff[i])) 
+    point_size = 20
+
+
+
+
+
+    def plot_hlines(ax,ma):
+        N = ma.N
+        w0 = 1/2/np.pi/1e6 
+        ax.hlines(ma.wz_E*w0,0,N,color='g',linestyle='--')
+        ax.hlines(ma.wy_E*w0,N,2*N,color='b',linestyle='--')
+        ax.hlines(ma.wx_E*w0,2*N,3*N,color='r',linestyle='--')
+    
+    def plot_evals(ax,ma,**kwargs): 
+        mode_nums = np.arange(1, len(ma.evals)+1)
+        w0 = ma.wz_E[0]/2/np.pi/1e6
+        ax.scatter(mode_nums,ma.evals*w0,**kwargs)  
+        ax.set_xlabel('Mode number')    
+        ax.set_ylabel('Frequency (MHz)')    
+        ax.set_title('Mode Spectra')
+
+    def plot_equilibrium_positions(ax,ma,**kwargs): 
+        z = ma.u[2*ma.N:] * ma.l0 * 1e6
+        x = np.zeros_like(z)
+        ax.scatter(x,z,**kwargs)    
+        lim = np.abs(z).max()*1.1 
+        ax.set_xlim(-lim,lim)
+        ax.set_ylim(-lim,lim)
+        ax.set_aspect('equal')  
+        ax.set_xlabel('x ($\mu$m)')
+        ax.set_ylabel('z ($\mu$m)')
+        ax.set_title('Equilibrium positions')
+
+    def label_ions(ax,ma):
+        z = ma.u[2*ma.N:] * ma.l0 * 1e6
+        x = np.zeros_like(z)
+        for i, txt in enumerate(range(ma.N)):
+            ax.annotate(txt, (x[i], z[i]))
+
+
+
+
+
+    fig, axs = plt.subplots(1,2,figsize=(10,6)) 
+
+    ax = axs[0] 
+    plot_equilibrium_positions(ax,gma_same_ions,label='Same ions',c='b')    
+    label_ions(ax,gma_same_ions)    
+    plot_equilibrium_positions(ax,gma_different_ions,label='Different ions',c='r')
+    label_ions(ax,gma_different_ions)   
     ax.legend() 
 
-    mode_nums = np.arange(1, len(gma_same_ions.evals)+1)
-    fig, ax = plt.subplots(1,1)
     # plot the mode frequencies for the two cases
-    ax.scatter(mode_nums,gma_same_ions.evals, label='Same ions')
-    ax.scatter(mode_nums,gma_different_ions.evals, label='Different ions')
+    ax = axs[1] 
+    plot_evals(ax,gma_same_ions,label='Same ions',c='b')    
+    plot_hlines(ax,gma_same_ions)
+    plot_evals(ax,gma_different_ions,label='Different ions',c='r')  
+    plot_hlines(ax,gma_different_ions)
+    w0 = gma_different_ions.wz_E[0]/2/np.pi/1e6  
+    evals_same = get_evals_alternate_calculation(gma_same_ions) 
+    evals_diff = get_evals_alternate_calculation(gma_different_ions)
+    ax.scatter(np.arange(1,len(evals_same)+1),evals_same*w0,c='b',label='Same ions (alternate calculation)',marker='x',s=100)    
+    ax.scatter(np.arange(1,len(evals_diff)+1),evals_diff*w0,c='r',label='Different ions (alternate calculation)',marker='x',s=100)  
     ax.legend()
+
     plt.show()
+    exit() 
 
 
     gma_same_charge = GeneralizedModeAnalysis(N=N, Z=1, wz=wz, wy=wy, wx=wx)    
@@ -568,22 +655,25 @@ if __name__ == '__main__':
 
     print(get_branch_nums(gma_same_charge.evecs))
     print(get_branch_nums(gma_different_charge.evecs))
-    fig, ax = plt.subplots(1,1) 
-    z_same = gma_same_charge.u[2*gma_same_charge.N:] * gma_same_charge.l0 * 1e6 
-    z_diff = gma_different_charge.u[2*gma_different_charge.N:] * gma_different_charge.l0 * 1e6
-    ax.scatter(x,z_same, label='Same charge', s = 10*gma_same_charge.q)
-    for i, txt in enumerate(range(gma_same_charge.N)):
-        ax.annotate(txt, (x[i], z_same[i]))
-    ax.scatter(x,z_diff, label='Different charge', s = 10*gma_different_charge.q)
-    for i, txt in enumerate(range(gma_different_charge.N)):
-        ax.annotate(txt, (x[i], z_diff[i]))
+    fig, axs = plt.subplots(1,2,figsize=(10,6))  
+
+    ax = axs[0]
+    plot_equilibrium_positions(ax,gma_same_charge,label='Same charge',c='b')    
+    label_ions(ax,gma_same_charge)
+    plot_equilibrium_positions(ax,gma_different_charge,label='Different charge',c='r')
+    label_ions(ax,gma_different_charge)
+    ax.legend()
     ax.legend()
 
-    fig, ax = plt.subplots(1,1)
     # plot the mode frequencies for the two cases
-    ax.scatter(mode_nums,gma_same_charge.evals, label='Same charge') 
-    ax.scatter(mode_nums,gma_different_charge.evals, label='Different charge')
+    ax = axs[1] 
+    plot_evals(ax,gma_same_charge,label='Same charge',c='b')
+    plot_hlines(ax,gma_same_charge)
+    plot_evals(ax,gma_different_charge,label='Different charge',c='r')
+    plot_hlines(ax,gma_different_charge)
     ax.legend()
+
     plt.show()
+
 
 
