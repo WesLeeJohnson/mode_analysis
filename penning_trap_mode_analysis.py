@@ -29,9 +29,6 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
         self.B = B
         self.frot = frot
         self.Vwall = Vwall
-        #self.quiet = quiet
-        #self.precision_solving = precision_solving
-        #self.method = method    
         self.initial_equilibrium_guess = initial_equilibrium_guess
 
         # calculate the ion properties in experimental units  
@@ -40,7 +37,12 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
         self.wz_E = super().calculate_species_trap_frequencies(self.m_E, self.q_E, self.omega_z)
         self.wc_E = self.q_E * self.B / self.m_E    
         self.wr_E = frot * 2*np.pi * 1e3    
-        self.wmag_E = 1/2*(self.wc_E - np.sqrt(self.wc_E**2 - 2*self.wz_E**2))
+        # calculate modified cyclotron and magnetron frequencies    
+        Dw = np.sqrt(self.wc_E**2 - 2*self.wz_E**2)
+        self.wmag_E = 1/2*(self.wc_E - Dw) 
+        self.wcyc_E = 1/2*(self.wc_E + Dw)  
+        self.wmag_r_E = self.wr_E - self.wmag_E 
+        self.wcyc_r_E = self.wcyc_E - self.wr_E
         self.V0 = (0.5 * self.m_E[0] * self.wz_E[0] ** 2) / self.q_E[0] # Find quadratic voltage at trap center, same for all ions  
         self.delta = self.XR*self.Vwall * 1612 / self.V0  # dimensionless coefficient for rotating wall strength 
         self.beta = calc_beta(self.wz_E, self.wr_E, self.wc_E)  
@@ -103,7 +105,7 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
 
 
     def get_momentum_transform(self):
-        mass_matrix = np.diag(np.repeat(self.m, 3)) 
+        mass_matrix = super().get_mass_matrix(self.m) 
         eye = np.eye(3*self.N)  
         zeros = np.zeros((3*self.N, 3*self.N))
         B_matrix = self.get_B_matrix()  
@@ -168,8 +170,8 @@ if __name__=='__main__':
 
     N_perturb = 2
     N_Be = 50
-    N_BeH = 50 
-    N_BeOH = 0
+    N_BeH = 25 
+    N_BeOH = 25
     N = N_Be + N_BeOH + N_BeH   
     B = 4.4588  
     masses = np.hstack([mBe_amu*np.ones(N_Be), mBeOH_amu*np.ones(N_BeOH), mBeH_amu*np.ones(N_BeH)])
@@ -182,7 +184,6 @@ if __name__=='__main__':
     for it in range(N_perturb): 
         ptma.initial_equilibrium_guess = initial_guess
         ptma.run() 
-        print(ptma.wc_E/2/np.pi/1e6)    
         initial_guess = ptma.u  
     
 
@@ -192,8 +193,11 @@ if __name__=='__main__':
 
     ax = axs[0]
     ax.plot(ptma.evals* ptma.omega_z/ 2/ np.pi/1e6, 'o')
-    ax.axvline(x=100, color='k', linestyle='--')
-    ax.axvline(x=200, color='k', linestyle='--')  
+    ax.axvline(x=N, color='k', linestyle='--')
+    ax.axvline(x=2*N, color='k', linestyle='--')  
+    ax.hlines((ptma.wcyc_r_E)/2/np.pi/1e6, 0, 3*N, color='b', linestyle='--')   
+    ax.hlines(ptma.wmag_r_E/2/np.pi/1e6, 0,3*N, color='r', linestyle='--')   
+    ax.hlines(ptma.wz_E/2/np.pi/1e6, 0, 3*N, color='g', linestyle='--')   
     ax.set_title('Eigenfrequencies')
     ax.set_xlabel('Mode number')
     ax.set_ylabel('Frequency (MHz)')
