@@ -35,7 +35,7 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
         self.q_E = self.Z * const.e  
         self.m_E = self.ionmass * const.u
         self.wz_E = super().calculate_species_trap_frequencies(self.m_E, self.q_E, self.omega_z)
-        self.wc_E = self.q_E * self.B / self.m_E    
+        self.wc_E = self.calculate_cyclotron_frequency(self.q_E, self.B, self.m_E)
         self.wr_E = frot * 2*np.pi * 1e3    
         # calculate modified cyclotron and magnetron frequencies    
         Dw = np.sqrt(self.wc_E**2 - 2*self.wz_E**2)
@@ -49,7 +49,8 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
         
         self.hasrun = False 
         
-
+    def calculate_cyclotron_frequency(self, q, B, m):
+        return q * B / m
 
     def trap_is_stable(self): 
         try: 
