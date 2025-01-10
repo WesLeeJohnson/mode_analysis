@@ -275,34 +275,9 @@ class QuarticTrapModeAnalysis(HarmonicTrapModeAnalysis):
 
 if __name__ == "__main__": 
     import matplotlib.pyplot as plt
+    from plotting_settings import *
 
 
-    # format matplotlib 
-    plt.rcParams.update({'font.size': 16})
-    plt.rcParams.update({'figure.figsize': [8, 6]})
-    plt.rcParams.update({'axes.grid': True})
-    plt.rcParams.update({'grid.alpha': 0.5})
-    plt.rcParams.update({'grid.linestyle': '-'})
-    plt.rcParams.update({'grid.linewidth': 0.5})
-    plt.rcParams.update({'grid.color': 'k'})
-    plt.rcParams.update({'legend.fontsize': 14})
-    plt.rcParams.update({'legend.frameon': True})
-    plt.rcParams.update({'legend.framealpha': 1})
-    plt.rcParams.update({'legend.facecolor': 'w'})
-    plt.rcParams.update({'legend.edgecolor': 'k'})
-    plt.rcParams.update({'legend.shadow': False})
-    plt.rcParams.update({'legend.fancybox': True})
-    plt.rcParams.update({'lines.linewidth': 2})
-    plt.rcParams.update({'lines.markersize': 8})
-    plt.rcParams.update({'xtick.labelsize': 14})
-    plt.rcParams.update({'ytick.labelsize': 14})
-    plt.rcParams.update({'axes.labelsize': 16})
-    plt.rcParams.update({'axes.titlesize': 18})
-    plt.rcParams.update({'figure.titlesize': 20})
-    plt.rcParams.update({'figure.dpi': 200})
-    plt.rcParams.update({'savefig.dpi': 200})
-    plt.rcParams.update({'savefig.format': 'pdf'})
-    plt.rcParams.update({'savefig.bbox': 'tight'})
 
     htma_obj = HarmonicTrapModeAnalysis(N=6,wz=2*np.pi*.3e6,wy=2*np.pi*2.1e6,wx=2*np.pi*2.5e6)  
     htma_obj.run()
