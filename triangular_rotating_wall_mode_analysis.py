@@ -9,7 +9,6 @@ How to use:         python dipole_rotating_wall_mode_analysis.py
 from penning_trap_mode_analysis import PenningTrapModeAnalysis 
 import numpy as np 
 import scipy.constants as const
-from plotting_settings import * 
 import matplotlib.pyplot as plt 
 
 class TriangularRotatingWallModeAnalysis(PenningTrapModeAnalysis):
@@ -44,12 +43,38 @@ class TriangularRotatingWallModeAnalysis(PenningTrapModeAnalysis):
         return H
     
 if __name__== "__main__":
+    def order_by_distance(u): 
+        N = len(u)//3 
+        x = u[0:N]
+        y = u[N:2*N]
+        z = u[2*N:3*N]
+        r = np.sqrt(x**2 + y**2 + z**2)
+        idx = np.argsort(r)
+        return idx
+
+    def reorder_positions(u, idx): 
+        N = len(u)//3 
+        x = u[0:N]
+        y = u[N:2*N]
+        z = u[2*N:3*N]
+        x = x[idx]
+        y = y[idx]
+        z = z[idx]
+        u = np.concatenate((x,y,z))
+        return u
+
+    def reordered_equilibrium_guess(mode_analysis): 
+        idx = order_by_distance(mode_analysis.u)
+        u = reorder_positions(mode_analysis.u, idx)
+        return u
+
+    from plotting_settings import *
     #N_Be = 100
     #N_BeOH = 0
     #N_BeH = 100 - N_Be - N_BeOH 
-    N_Be = 15 
-    N_BeH =  15 
-    N_BeOH = 0 
+    N_Be = 27
+    N_BeH =  9
+    N_BeOH = 0
     mBe = 9.012182
     mBeH = 9.012182 + 1.007825
     mBeOH = 9.012182 + 15.9994 + 1.007825   
@@ -61,7 +86,7 @@ if __name__== "__main__":
         'frot': 200, 
         #'triangular_wall_strength': 2.5e-3, 
         #'triangular_wall_strength': 2.e-3
-        'triangular_wall_strength': 1.5e-3 # works for N = 50, frot = 200
+        'triangular_wall_strength': 1.7e-3 # works for N = 50, frot = 200
         #'triangular_wall_strength': 0.5e-3 # works for N = 100, frot = 190 
 
     }
@@ -77,6 +102,9 @@ if __name__== "__main__":
                                         initial_equilibrium_guess=initial_guess
     )
     ma.run()
+    ma.initial_equilibrium_guess = reordered_equilibrium_guess(ma)
+    ma.run()
+
 
     print('lowest frequency mode: ', ma.evals_E[0]/2/np.pi/1e6*1e3, 'kHz')  
     print(ma.u)
@@ -88,27 +116,24 @@ if __name__== "__main__":
     ax.set_xlabel('Mode number')
     ax.set_title('Mode frequencies')
     ax = axs[1]
-    x = ma.u[:ma.N] #* ma.l0 * 1e6
-    y = ma.u[ma.N:2*ma.N] #* ma.l0 * 1e6
+    x = ma.u[:ma.N] * ma.l0 * 1e6
+    y = ma.u[ma.N:2*ma.N] * ma.l0 * 1e6
     c = ['b']*N_Be + ['g']*N_BeH + ['r']*N_BeOH 
-    ax.scatter(x,y,c=c)    
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
+    markers = ['o']*N_Be + ['^']*N_BeH + ['s']*N_BeOH
+    ax.set_xlabel('x ($\mu$m)')
+    ax.set_ylabel('y ($\mu$m)')
+    for xi, yi, ci, mi in zip(x, y, c, markers):
+        ax.scatter(xi, yi, c=ci, marker=mi)
+    
+    # Add legend
+    labels = ['Be', 'BeH', 'BeOH']
+    handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='b', markersize=10, label='Be'),
+               plt.Line2D([0], [0], marker='^', color='w', markerfacecolor='g', markersize=10, label='BeH'),
+               #plt.Line2D([0], [0], marker='s', color='w', markerfacecolor='r', markersize=10, label='BeOH')]
+    ]
+    ax.legend(handles=handles, labels=labels, loc='lower left')
     ax.set_aspect('equal')  
-    #ax.set_xlabel('x ($\mu$m)')
-    #ax.set_ylabel('y ($\mu$m)')
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')  
     ax.set_title('Equilibrium positions')
-    # make custom legend
-    labels = ['Be', 'BeH', 'BeOH']  
-    handles = [plt.Line2D([0], [0]
-                          , marker='o'
-                          , color='w'
-                          , markerfacecolor=color
-                          , label=label) for color, label in zip(['blue', 'green', 'red'], labels)
-            ]
-    ax.legend(handles=handles, labels=labels, loc='lower left')  
     plt.tight_layout()
     pdir =  '../planarCrystalNonlinearCoupling/figures/'
     fig.savefig(pdir + 'triangular_rotating_wall_mode_analysis.pdf')    
