@@ -50,7 +50,7 @@ class InnerIonVarMinimizedChainModeAnalysis(GeneralizedModeAnalysis):
         # l0 is given 
         # E_0 = q^2 / ( 4 \pi \epsilon_0 l0) is a characteristic energy of the system
         # ensure the mean spacing of the ions is 1 in dimensionless units
-        d_bar = np.mean(np.diff(self.u[2*self.N:][self.N_trim:-self.N_trim])) # mean spacing of qubit ions
+        d_bar = np.mean(self.calc_d(self.u[2*self.N:])) # mean spacing of qubit ions    
         self.l0 = self.l0_unnormalized / d_bar
 
         m0 = self.m0
@@ -74,6 +74,7 @@ class InnerIonVarMinimizedChainModeAnalysis(GeneralizedModeAnalysis):
         # trap frequencies
         self.wy = self.wy_E / w0
         self.wx = self.wx_E / w0
+        print(self.wx, self.wy) 
         # system parameters
         self.t0 = 1 / w0  # characteristic time
         self.v0 = self.l0 / self.t0  # characteristic velocity
@@ -110,16 +111,17 @@ class InnerIonVarMinimizedChainModeAnalysis(GeneralizedModeAnalysis):
         u = self.find_equilibrium_positions(self.z0)
         return u   
 
-    def inner_ion_variance(self, z, trim=True):
-        if trim: 
-            N_trim = self.N_trim
-            if N_trim == 0:
-                z_trim = z
-            else:
-                z_trim = z[N_trim:-N_trim]  
-            d = np.diff(z_trim)
+    def calc_d(self, z): 
+        N_trim = self.N_trim
+        if N_trim == 0:
+            z_trim = z
         else:
-            d = np.diff(z)  
+            z_trim = z[N_trim:-N_trim]  
+        d = np.diff(z_trim)
+        return d
+
+    def inner_ion_variance(self, z):
+        d = self.calc_d(z)
         d_bar = np.mean(d)
         s_z = np.sqrt(np.mean((d/d_bar - 1) ** 2))  
         return s_z 
