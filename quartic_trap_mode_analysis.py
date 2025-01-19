@@ -24,45 +24,69 @@ class InnerIonVarMinimizedChainModeAnalysis(GeneralizedModeAnalysis):
     Perform a mode analysis of a linear trap with anharmonicity.
     Based on the paper: 10.1209/0295-5075/86/60004
     """
-    def __init__(self, N = 2, wx = 2*np.pi*3e6, wy = 2*np.pi*2.5e6, l0 = 4.4e-6, ionmass_amu = 170.936323): 
+    def __init__(self, N = 2, wx = 2*np.pi*3e6, wy = 2*np.pi*2.5e6, l0 = 4.4e-6, ionmass_amu = 170.936323, N_trim = 0): 
         # for now assume that all the ions are the same mass and charge
         self.N = N
+        self.N_trim = N_trim
         self.wx_E = wx
         self.wy_E = wy
-        self.l0 = l0
+        self.l0_unnormalized = l0
         self.ionmass_amu = ensure_numpy_array(ionmass_amu, N)
         self.Z = ensure_numpy_array(1, N)
         self.q_E = self.Z * const.e   
         self.m_E = self.ionmass_amu * const.u
         self.q0 = self.q_E[0]   
         self.m0 = self.m_E[0]
-        self.B = 1 
+        self.a2 = None # these will need to be set by finding B given N 
+        self.a4 = None 
+        self.B = None # this will be optimized to minimize the inner ion variance
 
         self.hasrun = False
 
     def dimensionless_parameters(self): 
-        # normalize to the first ion species    
-        self.w0 = characteristic_frequency(self.q0, self.m0, self.l0) 
+
+        # this function has to be redefined because the normalizations are different for this problem
+
+        # l0 is given 
+        # E_0 = q^2 / ( 4 \pi \epsilon_0 l0) is a characteristic energy of the system
+        # ensure the mean spacing of the ions is 1 in dimensionless units
+        d_bar = np.mean(np.diff(self.u[2*self.N:][self.N_trim:-self.N_trim])) # mean spacing of qubit ions
+        self.l0 = self.l0_unnormalized / d_bar
+
         m0 = self.m0
         q0 = self.q0
-        w0 = self.w0
+        l0 = self.l0
+
+        # dimensionless parameters
+        self.a2 = np.sign(self.B) # always pm 1
+        self.a4 = np.abs(self.B)
+
+        # dimensionful parameters
+        self.a2_E = q0 ** 2 / (4 * np.pi * const.epsilon_0 * l0**3) * self.a2   
+        self.a4_E = self.B * np.abs(self.a2) / l0 ** 2   
+
+        self.w0 = np.sqrt( np.abs(self.a2_E) / m0) # characteristic frequency 
+        w0 = self.w0  # characteristic frequency
+
         # ion properties    
         self.m = self.m_E / m0
         self.q = self.q_E / q0  
         # trap frequencies
-        self.wy = self.wy_E / w0 
-        self.wx = self.wx_E / w0 
+        self.wy = self.wy_E / w0
+        self.wx = self.wx_E / w0
         # system parameters
         self.t0 = 1 / w0  # characteristic time
         self.v0 = self.l0 / self.t0  # characteristic velocity
-        self.E0 = 0.5 * m0 * self.v0 ** 2  # characteristic energy  
+        self.E0 = m0 * self.v0 ** 2  # characteristic energy  
+        self.p0 = self.potential(self.u) # this has to be done after the equilibrium positions are found
+        #print(q0**2 / (4 * np.pi * const.epsilon_0 * l0), self.E0)# it is consistent! 
+        #print(characteristic_frequency(self.q0, self.m0, self.l0) / 2 / np.pi / 1e6, w0 / 2 / np.pi / 1e6) #TODO: understand why these are different 
+
 
     def run(self):
-        self.dimensionless_parameters()
+        self.u = self.calculate_equilibrium_positions() # this can be broken into two steps, first given N find B so that the inner ion variance is minimized, then find the equilibrium positions, next normalize rms inner ion variance to 1
+        self.dimensionless_parameters() # this has to go after the equilibrium positions are found!! 
         assert self.trap_is_stable()    
-        
-        self.u = self.calculate_equilibrium_positions()
-        #self.reindex_ions(self.u)
         self.E_matrix = self.get_E_matrix(self.u)  
         self.T_matrix = self.get_momentum_transform() 
         self.H_matrix = self.get_H_matrix(self.T_matrix, self.E_matrix)   
@@ -72,6 +96,8 @@ class InnerIonVarMinimizedChainModeAnalysis(GeneralizedModeAnalysis):
         self.S_matrix = self.get_canonical_transformation() 
         self.checks() 
         self.hasrun = True  
+
+
     def trap_is_stable(self):
         truth1 = self.wx > 0e0 and self.wy > 0e0
         truth2 = self.wx > self.wy
@@ -80,70 +106,84 @@ class InnerIonVarMinimizedChainModeAnalysis(GeneralizedModeAnalysis):
 
 
     def calculate_equilibrium_positions(self):
-
         self.z0 = np.arange(0, self.N)  - (self.N - 1) / 2
-
         u = self.find_equilibrium_positions(self.z0)
-        self.p0 = self.potential(u)
         return u   
 
-    def inner_ion_variance(self, z):
-        d = np.diff(z)  
+    def inner_ion_variance(self, z, trim=True):
+        if trim: 
+            N_trim = self.N_trim
+            if N_trim == 0:
+                z_trim = z
+            else:
+                z_trim = z[N_trim:-N_trim]  
+            d = np.diff(z_trim)
+        else:
+            d = np.diff(z)  
         d_bar = np.mean(d)
         s_z = np.sqrt(np.mean((d/d_bar - 1) ** 2))  
         return s_z 
 
-    def find_axial_equilibrium_positions(self, z0):
+    def find_axial_equilibrium_positions(self, B, z0):
+
         def potential_Coulomb_axial(z): 
             dz = z[:, np.newaxis] - z
             rsep = np.sqrt(dz ** 2).astype(np.float64)
-
             with np.errstate(divide='ignore'):
                 V_Coulomb = np.sum( np.where(rsep != 0., 1 / rsep, 0) ) / 2 # divide by 2 to avoid double counting
             V_Coulomb *= .5 
             return V_Coulomb
 
         def force_Coulomb_axial(z):
-
             dz = z[:, np.newaxis] - z
             rsep = np.sqrt(dz ** 2).astype(np.float64)
-            qq = (self.q * self.q[:, np.newaxis]).astype(np.float64)    
-
             with np.errstate(divide='ignore', invalid='ignore'):
                 rsep3 = np.where(rsep != 0., rsep ** (-3), 0)
-            fz = dz * rsep3 * qq    
+            fz = dz * rsep3 
             Fz = -np.sum(fz, axis=1)
             return Fz * 0.5
 
         def potential_axial_opt(z):
-            V_trap = np.sum( 1/2 * self.B * z ** 2 + 1/24 * z ** 4) 
-            V_Coulomb = np.abs(self.B) * potential_Coulomb_axial(z)
-            return V_trap + V_Coulomb
+            V_trap = np.sum( 1/2 * z ** 2 + 1/4 * B * z ** 4) * np.sign(B)
+            V_Coulomb = potential_Coulomb_axial(z)
+            V = V_trap + V_Coulomb
+            return V
 
         def force_axial_opt(z): 
-            F_trap = self.B * z + 1/6 * z ** 3
-            F_Coulomb = np.abs(self.B) * force_Coulomb_axial(z) 
+            F_trap = (z + B * z ** 3 ) * np.sign(B)
+            F_Coulomb = force_Coulomb_axial(z) 
             return F_trap + F_Coulomb
 
         bfgs_tolerance = 1e-34
         out = opt.minimize(potential_axial_opt, z0, method='BFGS', jac=force_axial_opt, 
                                     options={'gtol': bfgs_tolerance, 'disp': False})
         z = np.sort(out.x)
-        d_bar = np.mean(np.diff(z)) 
-        return z / d_bar
+        return z 
 
 
     def minimize_inner_ion_variance(self, z0):
-        def inner_ion_variance_anharmonicity(B): 
-            self.B = B
-            z = self.find_axial_equilibrium_positions(z0)
-            return self.inner_ion_variance(z)
 
-        out = opt.minimize(inner_ion_variance_anharmonicity, self.B, method='Nelder-Mead',
-                            options={'xatol': 1e-6, 'disp': False})
-        self.B = out.x 
-        self.anharmonicity = self.B
-        z = self.find_axial_equilibrium_positions(z0)
+        def inner_ion_variance_anharmonicity(B): 
+            z = self.find_axial_equilibrium_positions(B, z0=z0) 
+            z_var = self.inner_ion_variance(z)
+            return z_var
+
+        # one way to handle the non-convexity of the problem is to try multiple initial guesses
+        initial_guesses = np.array([-3, 3]) 
+        b_opts = []
+        for initial_guess in initial_guesses: 
+            out = opt.minimize(inner_ion_variance_anharmonicity, initial_guess, method='Nelder-Mead',
+                                options={'xatol': 1e-6, 'disp': False})
+            b_opts.append(out.x)
+        # choose the B that minimizes the inner ion variance: 
+        s_z_opts = []
+        for b_opt in b_opts: 
+            z = self.find_axial_equilibrium_positions(b_opt, z0=z0) 
+            s_z = self.inner_ion_variance(z)
+            s_z_opts.append(s_z)
+        min_s_z_index = np.argmin(s_z_opts)
+        self.B = b_opts[min_s_z_index]
+        z = self.find_axial_equilibrium_positions(self.B , z0=z0)   
         return z 
 
     def find_equilibrium_positions(self, z0):
@@ -151,16 +191,17 @@ class InnerIonVarMinimizedChainModeAnalysis(GeneralizedModeAnalysis):
         zeros = np.zeros(self.N)
         u = np.hstack((zeros, zeros, z)) # assume ions are on the z axis   
         return u 
-    
-    def potential_trap_axial(self, z):
-        return np.sum(0.5 * self.anharmonicity * z **2 + 1/24 * z**4) 
 
-    def potential_coulomb_axial(self, z):
-        V_Coulomb = self.potential_coulomb(np.hstack((np.zeros(self.N), np.zeros(self.N), z)))
-        return V_Coulomb
-    
-    def potential_axial(self, z):
-        return self.potential_trap_axial(z) + self.potential_coulomb_axial(z)
+
+
+
+
+
+
+
+
+    def potential_trap_axial(self, z):
+        return np.sum(0.5 * self.a2 * z **2 + 1/4 * self.a4 * z**4) 
 
     def potential_trap(self, pos_array):
         x = pos_array[0:self.N]
@@ -172,14 +213,11 @@ class InnerIonVarMinimizedChainModeAnalysis(GeneralizedModeAnalysis):
         return V_trap
     
     def force_trap_axial(self, z):
-        return self.anharmonicity * z + 1/6 * z**3
+        return self.a2 * z + self.a4 * z**3
     
     def force_coulomb_axial(self, z):
         force_coulomb = self.force_coulomb(np.hstack((np.zeros(self.N), np.zeros(self.N), z)))[2*self.N:]
         return force_coulomb
-
-    def force_axial(self, z):   
-        return self.force_trap_axial(z) + self.force_coulomb_axial(z)
 
     def force_trap(self, pos_array):
         x = pos_array[0:self.N]
@@ -194,7 +232,7 @@ class InnerIonVarMinimizedChainModeAnalysis(GeneralizedModeAnalysis):
         return force_trap
 
     def hessian_trap_axial(self, z):    
-        Hzz = np.diag(self.anharmonicity + 1/2 * z**2)
+        Hzz = np.diag(self.a2 + 3 * self.a4 * z**2)
         return Hzz
 
     def hessian_trap(self, pos_array):
@@ -273,21 +311,78 @@ class QuarticTrapModeAnalysis(HarmonicTrapModeAnalysis):
         assert self.wx > self.wy and self.wy and self.wz, "Trap frequencies must be ordered wx > wy > wz"
         assert self.a_2 >= 0, "Anharmonicity must be positive"    
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 if __name__ == "__main__": 
     import matplotlib.pyplot as plt
     from plotting_settings import *
 
 
+    iivmc_obj_test = InnerIonVarMinimizedChainModeAnalysis(N=17, wx = 2*np.pi*2.5e6, wy = 2*np.pi*2.1e6, ionmass_amu = 170.936323, l0 = 5e-6,N_trim=1)
+    iivmc_obj_test.run()
+    print(iivmc_obj_test.B) 
 
-    htma_obj = HarmonicTrapModeAnalysis(N=6,wz=2*np.pi*.3e6,wy=2*np.pi*2.1e6,wx=2*np.pi*2.5e6)  
+
+    # plot the equilibrium positions and frequencies of the normal modes
+
+    fig, axs = plt.subplots(1, 2, figsize=(12, 6))
+    axs = axs.flatten()
+
+    ax = axs[0]
+    ax.set_title("Normal mode frequencies")
+    mode_numbers = np.arange(0, 3*iivmc_obj_test.N)
+    ax.scatter(mode_numbers, iivmc_obj_test.evals * iivmc_obj_test.w0 / 2 / np.pi * 1e-6)
+    ax.set_xlabel('Mode number')
+    ax.set_ylabel('Frequency (MHz)')
+    ax.set_ylim(0, iivmc_obj_test.wx_E / 2 / np.pi * 1e-6 * 1.1)
+
+    ax = axs[1]
+    ax.set_title("Equilibrium positions")
+    eq_pos_3D = iivmc_obj_test.u.reshape((3, iivmc_obj_test.N))
+    eq_pos_3D *= iivmc_obj_test.l0 * 1e6
+    y = eq_pos_3D[1]
+    z = eq_pos_3D[2]
+    ax.scatter(z, y)
+    ax.set_xlabel("z ($\mu$m)")
+    ax.set_ylabel("y ($\mu$m)")
+
+    plt.tight_layout()
+    plt.show()
+    exit() 
+
+
+
+
+
+
+
+
+
+
+
+
+    N = 6
+
+    htma_obj = HarmonicTrapModeAnalysis(N=N,wz=2*np.pi*.3e6,wy=2*np.pi*2.1e6,wx=2*np.pi*2.5e6)  
     htma_obj.run()
-    qtma_obj = QuarticTrapModeAnalysis(N=6,wz=2*np.pi*.3e6,wy=2*np.pi*2.1e6,wx=2*np.pi*2.5e6, anharmonicity=0.1)    
+    qtma_obj = QuarticTrapModeAnalysis(N=N,wz=2*np.pi*.3e6,wy=2*np.pi*2.1e6,wx=2*np.pi*2.5e6, anharmonicity=0.1)    
     qtma_obj.run()
     min_diff = np.min(np.abs(np.diff(np.sort(htma_obj.u[2*htma_obj.N:])))) * htma_obj.l0
     print(min_diff) 
-    iivmc_obj = InnerIonVarMinimizedChainModeAnalysis(N=6, wx = 2*np.pi*2.5e6, wy = 2*np.pi*2.1e6, ionmass_amu = 170.936323, l0 = min_diff) 
+    iivmc_obj = InnerIonVarMinimizedChainModeAnalysis(N=N, wx = 2*np.pi*2.5e6, wy = 2*np.pi*2.1e6, ionmass_amu = 170.936323, l0 = min_diff) 
     iivmc_obj.run() 
-    print('anharmonicity:', iivmc_obj.anharmonicity)
 
     # check eigen vectors are orthogonal and normalized wrt Hamiltonian matrix
     def check_normalization(E_matrix,evecs): 
