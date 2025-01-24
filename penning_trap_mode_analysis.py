@@ -16,6 +16,9 @@ import scipy.constants as const
 def calc_beta(wz, wr, wc): 
     return (wr*wc - wr**2) / wz**2 - 1/2
 
+def calculate_cyclotron_frequency(q, B, m):
+    return q * B / m    
+
 class PenningTrapModeAnalysis(GeneralizedModeAnalysis): 
     k_e = 1/(4*np.pi*const.epsilon_0)
     def __init__(self, N=19, XR=3.082, 
@@ -50,7 +53,7 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
         self.hasrun = False 
         
     def calculate_cyclotron_frequency(self, q, B, m):
-        return q * B / m
+        return calculate_cyclotron_frequency(q, B, m)   
 
     def trap_is_stable(self): 
         try: 
