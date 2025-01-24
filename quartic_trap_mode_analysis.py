@@ -58,12 +58,12 @@ class InnerIonVarMinimizedChainModeAnalysis(GeneralizedModeAnalysis):
         l0 = self.l0
 
         # dimensionless parameters
-        self.a2 = np.sign(self.B) # always pm 1
-        self.a4 = np.abs(self.B)
+        self.a2 =  np.sign(self.B) # always pm 1
+        self.a4 =  np.abs(self.B)
 
         # dimensionful parameters
-        self.a2_E = q0 ** 2 / (4 * np.pi * const.epsilon_0 * l0**3) * self.a2   
-        self.a4_E = self.B * np.abs(self.a2) / l0 ** 2   
+        self.a2_E = q0 ** 2 / (4 * np.pi * const.epsilon_0 * l0**3) * self.a2 * 2 # TODO: figure out where the factor of 2 comes from
+        self.a4_E = np.abs( self.B * self.a2_E / l0 ** 2 ) 
 
         self.w0 = np.sqrt( np.abs(self.a2_E) / m0) # characteristic frequency 
         w0 = self.w0  # characteristic frequency
@@ -74,7 +74,6 @@ class InnerIonVarMinimizedChainModeAnalysis(GeneralizedModeAnalysis):
         # trap frequencies
         self.wy = self.wy_E / w0
         self.wx = self.wx_E / w0
-        print(self.wx, self.wy) 
         # system parameters
         self.t0 = 1 / w0  # characteristic time
         self.v0 = self.l0 / self.t0  # characteristic velocity
