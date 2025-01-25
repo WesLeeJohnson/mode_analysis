@@ -65,8 +65,11 @@ class InnerIonVarMinimizedChainModeAnalysis(GeneralizedModeAnalysis):
         self.a2_E = q0 ** 2 / (4 * np.pi * const.epsilon_0 * l0**3) * self.a2 * 2 # TODO: figure out where the factor of 2 comes from
         self.a4_E = np.abs( self.B * self.a2_E / l0 ** 2 ) 
 
-        self.w0 = np.sqrt( np.abs(self.a2_E) / m0) # characteristic frequency 
-        w0 = self.w0  # characteristic frequency
+        w0 = np.sqrt( np.abs(self.a2_E) / m0) # characteristic frequency 
+
+        self.w0 = w0
+        self.q0 = q0
+        self.m0 = m0
 
         # ion properties    
         self.m = self.m_E / m0

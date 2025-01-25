@@ -72,6 +72,9 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
         q0_E = self.q_E[0]  
         m0_E = self.m_E[0]  
         wz0_E = self.wz_E[0]
+        self.q0 = q0_E 
+        self.m0 = m0_E
+        self.w0 = wz0_E
         # mass and charge   
         self.m = self.m_E / m0_E
         self.q = self.q_E / q0_E

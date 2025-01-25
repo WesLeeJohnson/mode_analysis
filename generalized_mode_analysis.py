@@ -107,6 +107,9 @@ class GeneralizedModeAnalysis:
         q0 = self.q_E[0]
         m0 = self.m_E[0]    
         w0 = self.wz_E[0]   
+        self.q0 = q0
+        self.m0 = m0
+        self.w0 = w0
         # ion properties    
         self.m = self.m_E / m0
         self.q = self.q_E / q0  
