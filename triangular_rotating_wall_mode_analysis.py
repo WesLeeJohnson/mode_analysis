@@ -109,7 +109,7 @@ if __name__== "__main__":
     print('lowest frequency mode: ', ma.evals_E[0]/2/np.pi/1e6*1e3, 'kHz')  
     print(ma.u)
     # plot the equilibrium positions and mode frequencies   
-    fig, axs= plt.subplots(1,2,figsize=(10,4))
+    fig, axs= plt.subplots(1,2,figsize=(8,5))
     ax = axs[0]
     ax.plot(ma.evals_E/2/np.pi/1e6,'o')
     ax.set_ylabel('Frequency (MHz)')
@@ -136,7 +136,8 @@ if __name__== "__main__":
     ax.set_title('Equilibrium positions')
     plt.tight_layout()
     pdir =  '../planarCrystalNonlinearCoupling/figures/'
-    fig.savefig(pdir + 'triangular_rotating_wall_mode_analysis.pdf')    
+    fig.savefig(pdir + 'triangular_rotating_wall_mode_analysis.pdf', dpi=600)    
+    fig.savefig(pdir + 'triangular_rotating_wall_mode_analysis.png', dpi=600)
     plt.show() 
 
 
