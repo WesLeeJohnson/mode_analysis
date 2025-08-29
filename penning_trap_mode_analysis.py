@@ -68,6 +68,7 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
 
 
 
+
     def dimensionless_parameters(self):
         q0_E = self.q_E[0]  
         m0_E = self.m_E[0]  
@@ -158,7 +159,23 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
 
 
 
+class PenningTrapSingleIonModeAnalysis(PenningTrapModeAnalysis):
+    def __init__(self, **kwargs): 
+        super().__init__(N=1, **kwargs) 
+        assert self.N == 1, "This class is for single ion only." 
+        assert len(self.m) == 1, "This class is for single ion only." 
+        assert len(self.q) == 1, "This class is for single ion only."
+        
+    def trap_is_stable(self):
+        return self.wc[0] > 2*self.wz[0]
+            
+    def calculate_equilibrium_positions(self):
+        u = np.zeros(3) 
+        self.u0 = u 
 
+            
+        self.p0 = 0 
+        return u   
 
 
 
