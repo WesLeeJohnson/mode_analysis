@@ -161,10 +161,8 @@ class PenningTrapModeAnalysis(GeneralizedModeAnalysis):
 
 class PenningTrapSingleIonModeAnalysis(PenningTrapModeAnalysis):
     def __init__(self, **kwargs): 
-        super().__init__(N=1, **kwargs) 
+        super().__init__(**kwargs) 
         assert self.N == 1, "This class is for single ion only." 
-        assert len(self.m) == 1, "This class is for single ion only." 
-        assert len(self.q) == 1, "This class is for single ion only."
         
     def trap_is_stable(self):
         return self.wc[0] > 2*self.wz[0]
@@ -179,8 +177,33 @@ class PenningTrapSingleIonModeAnalysis(PenningTrapModeAnalysis):
 
 
 
+    #def run(self):
+    #    self.dimensionless_parameters()
+    #    assert self.trap_is_stable()    
+    #    
+    #    self.u = self.calculate_equilibrium_positions()
+    #    #self.reindex_ions(self.u)
+    #    self.E_matrix = self.get_E_matrix(self.u)  
+    #    self.T_matrix = self.get_momentum_transform() 
+    #    self.H_matrix = self.get_H_matrix(self.T_matrix, self.E_matrix)   
+    #    self.evals, self.evecs = self.calculate_normal_modes(self.H_matrix)
+    #    self.evecs_vel = self.get_eigen_vectors_xv_coords(self.T_matrix,self.evecs)    
+    #    self.check_for_zero_modes() 
+    #    self.S_matrix = self.get_canonical_transformation() 
+    #    self.checks() 
+    #    self.hasrun = True  
 
 
+    #def calculate_normal_modes(self, H_matrix):
+
+    #    J = self.get_symplectic_matrix()
+    #    D_matrix = J @ H_matrix  
+    #    # u_n(t) = exp(-i w_n t) u_n(0), minus by convention
+    #    evals, evecs = np.linalg.eig(-D_matrix)   
+    #    evals, evecs = self.organize_modes(evals, evecs)
+    #    evecs = self.normalize_eigen_vectors(evecs, H_matrix) 
+
+    #    return evals, evecs 
 
 
 
