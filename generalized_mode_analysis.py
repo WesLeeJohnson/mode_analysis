@@ -219,8 +219,8 @@ class GeneralizedModeAnalysis:
 
 
 
-    def normalize_eigen_vectors(self, evecs, H_matrix):
-        return normalize_eigen_vectors(evecs,H_matrix) 
+    def normalize_eigen_vectors(self, evecs, H_matrix,evs=None):
+        return normalize_eigen_vectors(evecs,H_matrix,evs=evs) 
 
 
 
