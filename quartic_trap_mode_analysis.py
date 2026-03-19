@@ -13,10 +13,8 @@ from scipy import constants as const
 from scipy import optimize as opt
 from generalized_mode_analysis import ensure_numpy_array
 
-def characteristic_frequency(q, m, l):
-    k_e = 1 / (4 * np.pi * const.epsilon_0)  # Coulomb constant
-    w0 = (k_e * q ** 2 / (.5 * m * l ** 3)) ** (1 / 2)    
-    print(w0/2/np.pi/1e6)   
+def characteristic_frequency(a2_E, m0): 
+    w0 = np.sqrt( np.abs(a2_E[0]) / m0) 
     return w0 
 
 class InnerIonVarMinimizedChainModeAnalysis(GeneralizedModeAnalysis):    
@@ -65,7 +63,7 @@ class InnerIonVarMinimizedChainModeAnalysis(GeneralizedModeAnalysis):
         self.a2_E = q0 ** 2 / (4 * np.pi * const.epsilon_0 * l0**3) * self.a2 * 2 # TODO: figure out where the factor of 2 comes from
         self.a4_E = np.abs( self.B * self.a2_E / l0 ** 2 ) 
 
-        w0 = np.sqrt( np.abs(self.a2_E) / m0) # characteristic frequency 
+        w0 = characteristic_frequency(self.a2_E, m0)
 
         self.w0 = w0
         self.q0 = q0
@@ -82,8 +80,6 @@ class InnerIonVarMinimizedChainModeAnalysis(GeneralizedModeAnalysis):
         self.v0 = self.l0 / self.t0  # characteristic velocity
         self.E0 = m0 * self.v0 ** 2  # characteristic energy  
         self.p0 = self.potential(self.u) # this has to be done after the equilibrium positions are found
-        #print(q0**2 / (4 * np.pi * const.epsilon_0 * l0), self.E0)# it is consistent! 
-        #print(characteristic_frequency(self.q0, self.m0, self.l0) / 2 / np.pi / 1e6, w0 / 2 / np.pi / 1e6) #TODO: understand why these are different 
 
 
     def run(self):
